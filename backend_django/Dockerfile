@@ -4,7 +4,6 @@ FROM python:3.11-slim
 # Variables de entorno
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PORT=8000 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
@@ -32,13 +31,13 @@ RUN python manage.py collectstatic --noinput || true
 # Crear directorio para media files
 RUN mkdir -p /app/media
 
-# Exponer puerto
-EXPOSE 8000
+# Exponer puerto (Cloud Run usa la variable PORT)
+EXPOSE 8080
 
 # Script de entrada
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-# Comando de inicio
+# Comando de inicio - usa $PORT variable que Cloud Run provee
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120"]
+CMD gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 300 --access-logfile - --error-logfile -
