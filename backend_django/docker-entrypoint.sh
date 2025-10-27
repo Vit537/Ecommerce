@@ -81,8 +81,15 @@ fi
 echo ""
 echo "========================================="
 echo "✅ Configuración completa!"
-echo "🌐 Iniciando servidor en puerto 8000..."
+echo "🌐 Iniciando servidor Gunicorn en puerto ${PORT:-8080}..."
 echo "========================================="
 echo ""
 
-exec "$@"
+# Ejecutar Gunicorn con el puerto dinámico de Cloud Run
+exec gunicorn core.wsgi:application \
+    --bind "0.0.0.0:${PORT:-8080}" \
+    --workers 2 \
+    --timeout 300 \
+    --access-logfile - \
+    --error-logfile - \
+    --log-level info

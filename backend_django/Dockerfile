@@ -39,5 +39,4 @@ COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 # Comando de inicio - usa $PORT variable que Cloud Run provee
-ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 300 --access-logfile - --error-logfile -
+CMD ["/docker-entrypoint.sh"]
