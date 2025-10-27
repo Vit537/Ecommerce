@@ -1,0 +1,87 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/staticfiles/
+/static/
+/media/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+*.bak
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# Documentation
+docs/_build/
+site/
+
+# Node (if any)
+node_modules/
+package-lock.json
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Sensitive data
+cuentas.txt
+datos.txt
+*.key
+*.pem
+*.cer
+
+# Test data
+test/
+docEjemplo/
+
+# Machine Learning models (keep in repo, but can exclude if large)
+# ml_predictions/ml_models/*.pkl
+# ml_predictions/ml_models/*.joblib
+
+# Reports
+reports/*.pdf
+reports/*.xlsx

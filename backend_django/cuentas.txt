@@ -1,5 +1,0 @@
- Usuarios de Prueba Creados
-1 Administrador: admin@tienda.com / admin123
-1 Gerente: gerente@tienda.com / gerente123
-1 Empleado: empleado@tienda.com / empleado123
-3 Clientes: cliente1@email.com, cliente2@email.com, cliente3@email.com / cliente123
