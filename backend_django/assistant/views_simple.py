@@ -18,8 +18,15 @@ from .serializers import (
 )
 from .ai_service import AssistantAIService
 
-# Instancia global del servicio de IA
-ai_service = AssistantAIService()
+# Instancia global del servicio de IA (lazy loading)
+_ai_service = None
+
+def get_ai_service():
+    """Obtiene la instancia del servicio de IA (singleton con lazy loading)"""
+    global _ai_service
+    if _ai_service is None:
+        _ai_service = AssistantAIService()
+    return _ai_service
 
 
 def _get_user_role(user) -> str:
@@ -107,6 +114,7 @@ def chat_message(request):
     
     # Procesar con IA
     try:
+        ai_service = get_ai_service()
         ai_response = ai_service.chat(
             user_message=message_text,
             user_role=user_role,

@@ -15,9 +15,20 @@ class AssistantAIService:
     Maneja diferentes niveles de permisos según el rol del usuario
     """
     
+    _client = None
+    
     def __init__(self):
-        self.client = Groq(api_key=settings.GROQ_API_KEY)
         self.model = "llama-3.3-70b-versatile"
+    
+    @property
+    def client(self):
+        """Lazy loading del cliente Groq"""
+        if self._client is None:
+            try:
+                self._client = Groq(api_key=settings.GROQ_API_KEY)
+            except Exception as e:
+                raise RuntimeError(f"Error al inicializar cliente Groq: {e}")
+        return self._client
         
     def _get_system_context(self, user_role: str) -> str:
         """
