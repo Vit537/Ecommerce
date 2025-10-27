@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Asistente API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Asistente API</h1>
+    
+    <div class="section">
+        <h2>1. Verificar Token</h2>
+        <button onclick="checkToken()">Ver Token en LocalStorage</button>
+        <div id="tokenResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. Test Quick Actions</h2>
+        <button onclick="testQuickActions()">Probar Quick Actions</button>
+        <div id="quickActionsResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. Test Suggestions</h2>
+        <button onclick="testSuggestions()">Probar Suggestions</button>
+        <div id="suggestionsResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Test Chat</h2>
+        <input type="text" id="chatMessage" placeholder="Escribe un mensaje..." value="¿Cómo registro una venta?">
+        <button onclick="testChat()">Enviar Mensaje</button>
+        <div id="chatResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api';
+
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function checkToken() {
+            const token = getToken();
+            const resultDiv = document.getElementById('tokenResult');
+            
+            if (token) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Token encontrado:\n${token.substring(0, 50)}...`;
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ No hay token en localStorage';
+            }
+        }
+
+        async function testQuickActions() {
+            const resultDiv = document.getElementById('quickActionsResult');
+            const token = getToken();
+            
+            if (!token) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ No hay token. Por favor inicia sesión primero.';
+                return;
+            }
+
+            try {
+                resultDiv.textContent = '⏳ Cargando...';
+                
+                const response = await fetch(`${API_URL}/assistant/quick-actions/`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                resultDiv.textContent = `Status: ${response.status}\n\n`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent += `✅ Quick Actions:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    const error = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent += `❌ Error:\n${error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error de red:\n${error.message}`;
+            }
+        }
+
+        async function testSuggestions() {
+            const resultDiv = document.getElementById('suggestionsResult');
+            const token = getToken();
+            
+            if (!token) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ No hay token. Por favor inicia sesión primero.';
+                return;
+            }
+
+            try {
+                resultDiv.textContent = '⏳ Cargando...';
+                
+                const response = await fetch(`${API_URL}/assistant/suggestions/`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                resultDiv.textContent = `Status: ${response.status}\n\n`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent += `✅ Suggestions:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    const error = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent += `❌ Error:\n${error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error de red:\n${error.message}`;
+            }
+        }
+
+        async function testChat() {
+            const resultDiv = document.getElementById('chatResult');
+            const token = getToken();
+            const message = document.getElementById('chatMessage').value;
+            
+            if (!token) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ No hay token. Por favor inicia sesión primero.';
+                return;
+            }
+
+            if (!message.trim()) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Por favor escribe un mensaje.';
+                return;
+            }
+
+            try {
+                resultDiv.textContent = '⏳ Enviando mensaje...';
+                
+                const response = await fetch(`${API_URL}/assistant/chat/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                resultDiv.textContent = `Status: ${response.status}\n\n`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent += `✅ Respuesta:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    const error = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent += `❌ Error:\n${error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error de red:\n${error.message}`;
+            }
+        }
+
+        // Auto-verificar token al cargar
+        window.onload = checkToken;
+    </script>
+</body>
+</html>

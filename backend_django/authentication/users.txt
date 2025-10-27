@@ -1,0 +1,67 @@
+{
+    "email": "henry@ejemplo.com",
+    "password": "miclave123"
+}
+
+{
+    "message": "Login successful",
+    "user": {
+        "id": 2,
+        "email": "henry@ejemplo.com",
+        "first_name": "henry",
+        "last_name": "salas",
+        "full_name": "henry salas",
+        "avatar": null,
+        "role": "collaborator",
+        "is_email_verified": false,
+        "created_at": "2025-09-15T22:02:11.254360Z",
+        "updated_at": "2025-09-15T22:02:11.254375Z",
+        "is_active": true,
+        "profile": {
+            "bio": null,
+            "location": null,
+            "organization": null,
+            "website": null,
+            "timezone": "UTC",
+            "notification_preferences": {}
+        }
+    },
+    "tokens": {
+        "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc1ODM5NDc2MiwiaWF0IjoxNzU4MzA4MzYyLCJqdGkiOiJjNDgyZGNhMzUzNGU0OWNlYTI3ZjI0OWQ5YTJmNDMwZSIsInVzZXJfaWQiOjJ9.LnvZHbVHiVVCzC0Am7K4SSAu9Q9TvNpJg16q5a_MN0w",
+        "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU4MzExOTYyLCJpYXQiOjE3NTgzMDgzNjIsImp0aSI6IjNjMzg3MWE2YTM0NjRmNGQ5NjgzYmQ0YTNmNjYyYzkzIiwidXNlcl9pZCI6Mn0.V5gdUp92iSOK86VlOuYtAqxy6kA7RUt77YpuP3yTmUI"
+    }
+
+
+
+
+    ////////////////////////
+
+
+    El archivo init_store_data.py es un comando personalizado de Django que creé para inicializar todos los datos de prueba que necesitas para tu tienda de ropa.
+
+¿Qué hace este comando?
+Este comando Django (python manage.py init_store_data) crea automáticamente:
+
+🔐 Permisos y Roles
+24 permisos específicos para tienda de ropa (inventario, ventas, compras, empleados, etc.)
+4 roles principales: Administrador, Gerente, Empleado, Cliente
+Asignación automática de permisos a cada rol
+👥 Usuarios de Prueba
+1 Administrador: admin@tienda.com / admin123
+1 Gerente: gerente@tienda.com / gerente123
+1 Empleado: empleado@tienda.com / empleado123
+3 Clientes: cliente1@email.com, cliente2@email.com, cliente3@email.com / cliente123
+
+🛍️ Datos de Productos
+Marcas: Nike, Adidas, H&M, Zara, Levi's
+Categorías: Camisetas, Pantalones, Zapatos, Vestidos, Chaquetas, Accesorios
+Tallas: XS, S, M, L, XL, XXL (ropa) + 38, 39, 40, 41, 42, 43 (zapatos)
+Colores: Negro, Blanco, Azul, Rojo, Verde, Gris, Amarillo, Rosa
+Productos de ejemplo: Con variantes, stock inicial, precios
+🏢 Datos de Empleados
+Departamentos: Ventas, Inventario, Administración, RRHH
+Posiciones: Vendedor, Cajero, Supervisor, Encargado, Gerente, Contador
+💳 Métodos de Pago
+Efectivo, Tarjetas de crédito/débito, Transferencia bancaria, Pago móvil
+🏭 Proveedores
+3 proveedores de ejemplo con información de contacto
