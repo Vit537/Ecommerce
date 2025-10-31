@@ -13,7 +13,7 @@ import time
 import json
 
 from .ai_service import AIReportService
-from .whisper_service import WhisperTranscriptionService
+# from .whisper_service import WhisperTranscriptionService
 from .export_service import ReportExporter
 from .models import ReportLog
 from .serializers import ReportLogSerializer

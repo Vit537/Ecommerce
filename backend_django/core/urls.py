@@ -20,6 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from . import api
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('authentication.urls')),
@@ -32,6 +33,8 @@ urlpatterns = [
     path('api/orders/', include('orders.urls')),
     path('api/ml/', include('ml_predictions.urls')),  # Machine Learning
     path('api/assistant/', include('assistant.urls')),  # Chatbot Asistente
+    
+
 ]
 
 # Serve media files during development

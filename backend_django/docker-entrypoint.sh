@@ -46,22 +46,36 @@ except Exception as e:
     print(f'⚠️  Error: {e}')
 EOF
 
-# Cargar datos en background (esto sí puede ser asíncrono)
-(
-  sleep 5
-  python manage.py shell <<'EOF' 2>&1 || true
-from products.models import Product
-try:
-    if Product.objects.count() == 0:
-        print('⚙️  Cargando datos...')
-        import subprocess
-        subprocess.run(['python', 'manage.py', 'load_test_data', '--skip-ml'], check=False)
-    else:
-        print('✅ Datos existen')
-except Exception as e:
-    print(f'⚠️  Error: {e}')
-EOF
-) &
+# ============================================================================
+# 🚫 CARGA AUTOMÁTICA DE DATOS DESACTIVADA
+# ============================================================================
+# La carga de datos se realizará manualmente después del despliegue
+# usando Cloud Run Jobs o comandos manuales en la Cloud Console
+# 
+# Para cargar datos manualmente en producción:
+# 1. Usar Cloud Run Jobs (recomendado)
+# 2. O ejecutar desde Cloud Console Shell:
+#    - python ejecutarDatos/1_generate_test_data.py --auto
+#    - python ejecutarDatos/2_generate_ml_data_v2.py
+#    - python ejecutarDatos/3_fix_order_dates.py
+# ============================================================================
+
+# ❌ CÓDIGO ANTERIOR (DESACTIVADO):
+# (
+#   sleep 5
+#   python manage.py shell <<'EOF' 2>&1 || true
+# from products.models import Product
+# try:
+#     if Product.objects.count() == 0:
+#         print('⚙️  Cargando datos...')
+#         import subprocess
+#         subprocess.run(['python', 'manage.py', 'load_test_data', '--skip-ml'], check=False)
+#     else:
+#         print('✅ Datos existen')
+# except Exception as e:
+#     print(f'⚠️  Error: {e}')
+# EOF
+# ) &
 
 # Iniciar servidor
 echo ""

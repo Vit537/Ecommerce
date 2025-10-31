@@ -415,7 +415,7 @@ export default function ReportGenerator() {
               endAdornment: (
                 <InputAdornment position="end">
                   <Tooltip title={isListening ? "Detener grabación" : "Grabar audio"}>
-                    <IconButton
+                     <IconButton
                       onClick={toggleListening}
                       disabled={loading}
                       color={isListening ? "error" : "primary"}
@@ -429,7 +429,7 @@ export default function ReportGenerator() {
                       }}
                     >
                       {isListening ? <StopCircle size={24} /> : <Mic size={24} />}
-                    </IconButton>
+                    </IconButton> 
                   </Tooltip>
                 </InputAdornment>
               ),

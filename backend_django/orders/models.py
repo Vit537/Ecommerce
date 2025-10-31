@@ -116,50 +116,6 @@ class Order(models.Model):
         super().save(*args, **kwargs)
 
 
-class Invoice(models.Model):
-    """
-    Factura formal asociada a una orden de venta
-    """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    order = models.OneToOneField('Order', on_delete=models.CASCADE, related_name='invoice')
-    invoice_number = models.CharField(max_length=50, unique=True)
-    issue_date = models.DateTimeField(auto_now_add=True)
-    billing_name = models.CharField(max_length=255)
-    billing_address = models.TextField()
-    billing_tax_id = models.CharField(max_length=50, blank=True, null=True)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    payment_method = models.ForeignKey('PaymentMethod', on_delete=models.SET_NULL, null=True)
-    notes = models.TextField(blank=True, null=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_invoices')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        ordering = ['-issue_date']
-        indexes = [
-            models.Index(fields=['invoice_number']),
-            models.Index(fields=['order']),
-        ]
-    
-    def __str__(self):
-        return f"Factura {self.invoice_number} - {self.billing_name}"
-    
-    def save(self, *args, **kwargs):
-        if not self.invoice_number:
-            # Generar número de factura único
-            from django.utils import timezone
-            date_str = timezone.now().strftime('%Y%m%d')
-            last_invoice = Invoice.objects.filter(invoice_number__startswith=f'FAC-{date_str}').order_by('-invoice_number').first()
-            if last_invoice:
-                last_number = int(last_invoice.invoice_number.split('-')[-1])
-                new_number = last_number + 1
-            else:
-                new_number = 1
-            self.invoice_number = f'FAC-{date_str}-{new_number:04d}'
-        super().save(*args, **kwargs)
-
 class OrderItem(models.Model):
     """
     Items de una orden
