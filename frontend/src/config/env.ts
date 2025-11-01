@@ -20,6 +20,7 @@ const getEnvVar = (key: string, defaultValue: string): string => {
   }
   
   // Si no existe, usamos import.meta.env (desarrollo)
+  // @ts-ignore - Vite env vars are added at build time
   const viteEnv = import.meta.env[key];
   if (viteEnv) return viteEnv as string;
   
@@ -31,8 +32,10 @@ export const config = {
   apiUrl: getEnvVar('VITE_API_URL', 'http://localhost:8000'),
   appName: getEnvVar('VITE_APP_NAME', 'Boutique E-commerce'),
   appVersion: getEnvVar('VITE_APP_VERSION', '1.0.0'),
-  isDevelopment: import.meta.env.DEV,
-  isProduction: import.meta.env.PROD,
+  // @ts-ignore - DEV and PROD are added by Vite
+  isDevelopment: import.meta.env.DEV || false,
+  // @ts-ignore - DEV and PROD are added by Vite
+  isProduction: import.meta.env.PROD || false,
 };
 
 export default config;
