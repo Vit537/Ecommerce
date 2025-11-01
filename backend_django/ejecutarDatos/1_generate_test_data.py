@@ -928,19 +928,7 @@ def main():
     print("=" * 60)
     print()
     
-    # Confirmación automática en entorno de desarrollo
-    import sys
-    auto_mode = len(sys.argv) > 1 and sys.argv[1] == '--auto'
-    
-    if auto_mode:
-        print("✓ Modo automático activado")
-    else:
-        response = input("⚠️  ¿Estás seguro de que quieres limpiar y regenerar todos los datos? (si/no): ")
-        if response.lower() not in ['si', 'sí', 's', 'yes', 'y']:
-            print("❌ Operación cancelada")
-            return
-    
-    print()
+ 
     
     # Ejecutar en orden
     clear_data()
