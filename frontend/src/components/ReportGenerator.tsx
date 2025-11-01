@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Download, FileText, FileSpreadsheet, Send, Sparkles, Mic, StopCircle } from 'lucide-react';
 import axios from 'axios';
+import { config } from '../config/env';
 import {
   Box,
   Paper,
@@ -84,7 +85,7 @@ interface ReportSuggestion {
   customers: string[];
 }
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = `${config.apiUrl}/api`;
 
 export default function ReportGenerator() {
   const theme = useTheme();

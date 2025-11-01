@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
 import { useTheme } from '../contexts/ThemeContext';
+import { config } from '../config/env';
 
 interface Employee {
   id: number;
@@ -30,7 +31,7 @@ const EmployeeManagement: React.FC = () => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/auth/users/', {
+      const response = await fetch(`${config.apiUrl}/api/auth/users/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

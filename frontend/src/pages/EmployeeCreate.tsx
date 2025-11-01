@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
 import { useTheme } from '../contexts/ThemeContext';
+import { config } from '../config/env';
 
 interface EmployeeFormData {
   first_name: string;
@@ -80,7 +81,7 @@ const EmployeeCreate: React.FC = () => {
       // Preparar datos para enviar (sin password_confirm)
       const { password_confirm, ...dataToSend } = formData;
       
-      const response = await fetch('http://localhost:8000/api/auth/users/', {
+      const response = await fetch(`${config.apiUrl}/api/auth/users/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

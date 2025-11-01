@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
 import { useTheme } from '../contexts/ThemeContext';
+import { config } from '../config/env';
 
 interface Employee {
   id: number;
@@ -45,7 +46,7 @@ const EmployeeDetail: React.FC = () => {
   const fetchEmployeeDetail = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/auth/users/${id}/`, {
+      const response = await fetch(`${config.apiUrl}/api/auth/users/${id}/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -80,7 +81,7 @@ const EmployeeDetail: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/auth/users/${id}/`, {
+      const response = await fetch(`${config.apiUrl}/api/auth/users/${id}/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -108,7 +109,7 @@ const EmployeeDetail: React.FC = () => {
   const handleToggleStatus = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/auth/users/${id}/`, {
+      const response = await fetch(`${config.apiUrl}/api/auth/users/${id}/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

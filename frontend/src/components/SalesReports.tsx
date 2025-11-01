@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { config } from '../config/env';
 
 interface SalesMetrics {
   total_sales: number;
@@ -69,7 +70,7 @@ const SalesReports: React.FC = () => {
 
   const fetchSalesMetrics = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/reports/sales-metrics/?from=${dateRange.from}&to=${dateRange.to}`, {
+      const response = await fetch(`${config.apiUrl}/api/reports/sales-metrics/?from=${dateRange.from}&to=${dateRange.to}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -90,7 +91,7 @@ const SalesReports: React.FC = () => {
 
   const fetchTopProducts = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/reports/top-products/?from=${dateRange.from}&to=${dateRange.to}&limit=10`, {
+      const response = await fetch(`${config.apiUrl}/api/reports/top-products/?from=${dateRange.from}&to=${dateRange.to}&limit=10`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -111,7 +112,7 @@ const SalesReports: React.FC = () => {
 
   const fetchSalesData = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/reports/daily-sales/?from=${dateRange.from}&to=${dateRange.to}`, {
+      const response = await fetch(`${config.apiUrl}/api/reports/daily-sales/?from=${dateRange.from}&to=${dateRange.to}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -132,7 +133,7 @@ const SalesReports: React.FC = () => {
 
   const fetchCategorySales = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/reports/category-sales/?from=${dateRange.from}&to=${dateRange.to}`, {
+      const response = await fetch(`${config.apiUrl}/api/reports/category-sales/?from=${dateRange.from}&to=${dateRange.to}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -153,7 +154,7 @@ const SalesReports: React.FC = () => {
 
   const fetchRecentOrders = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/orders/?limit=10&ordering=-created_at', {
+      const response = await fetch(`${config.apiUrl}/api/orders/?limit=10&ordering=-created_at`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -215,7 +216,7 @@ const SalesReports: React.FC = () => {
 
   const exportReport = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/reports/export/?from=${dateRange.from}&to=${dateRange.to}`, {
+      const response = await fetch(`${config.apiUrl}/api/reports/export/?from=${dateRange.from}&to=${dateRange.to}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

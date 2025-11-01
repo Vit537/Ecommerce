@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { config } from '../config/env';
 import {
   Box,
   Card,
@@ -92,7 +93,7 @@ const CustomerManagement: React.FC = () => {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/authentication/customers/', {
+      const response = await fetch(`${config.apiUrl}/api/authentication/customers/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -117,7 +118,7 @@ const CustomerManagement: React.FC = () => {
   const fetchCustomerOrders = async (customerId: number) => {
     setOrdersLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/orders/customer/${customerId}/`, {
+      const response = await fetch(`${config.apiUrl}/api/orders/customer/${customerId}/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -150,7 +151,7 @@ const CustomerManagement: React.FC = () => {
 
   const toggleCustomerStatus = async (customerId: number, newStatus: boolean) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/authentication/customers/${customerId}/`, {
+      const response = await fetch(`${config.apiUrl}/api/authentication/customers/${customerId}/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

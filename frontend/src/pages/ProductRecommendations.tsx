@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { config } from '../config/env';
 import {
   Box,
   Container,
@@ -51,7 +52,7 @@ const ProductRecommendations: React.FC = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8000/api/products/', {
+      const response = await axios.get(`${config.apiUrl}/api/products/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

@@ -1,0 +1,90 @@
+name: Deploy Frontend to Cloud Run
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  REGION: us-central1
+  REPOSITORY: ecommerce-registry  # Mismo registry que el backend
+  SERVICE_NAME: ecommerce-frontend
+  IMAGE_NAME: frontend
+  BACKEND_URL: https://ecommerce-backend-930184937279.us-central1.run.app
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: frontend-cloud-run
+      cancel-in-progress: true
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build Docker image
+        id: build
+        run: |
+          IMAGE_URI="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+          echo "Building Docker image: $IMAGE_URI"
+          docker build -t "$IMAGE_URI" ./frontend
+          echo "✅ Docker image built successfully"
+
+      - name: Push Docker image to Artifact Registry
+        run: |
+          echo "Pushing Docker image: $IMAGE_URI"
+          docker push "$IMAGE_URI"
+          echo "✅ Docker image pushed successfully"
+
+      - name: Deploy to Cloud Run
+        run: |
+          echo "Deploying to Cloud Run service: ${{ env.SERVICE_NAME }}"
+          gcloud run deploy "${{ env.SERVICE_NAME }}" \
+            --image "$IMAGE_URI" \
+            --platform managed \
+            --region "${{ env.REGION }}" \
+            --allow-unauthenticated \
+            --set-env-vars "VITE_API_URL=${{ env.BACKEND_URL }}" \
+            --set-env-vars "VITE_APP_NAME=Boutique E-commerce" \
+            --set-env-vars "VITE_APP_VERSION=1.0.0" \
+            --port 8080 \
+            --memory 512Mi \
+            --cpu 1 \
+            --timeout 300 \
+            --min-instances 0 \
+            --max-instances 10
+          echo "✅ Deployment successful"
+
+      - name: Get service URL
+        run: |
+          SERVICE_URL=$(gcloud run services describe "${{ env.SERVICE_NAME }}" --region "${{ env.REGION }}" --format="value(status.url)")
+          echo "=========================================="
+          echo "🎉 Frontend deployed successfully!"
+          echo "🌐 Service URL: $SERVICE_URL"
+          echo "=========================================="
+          echo ""
+          echo "Access your application:"
+          echo "  🌐 Frontend: $SERVICE_URL"
+          echo "  🔧 Backend: ${{ env.BACKEND_URL }}"

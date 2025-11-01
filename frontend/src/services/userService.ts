@@ -1,4 +1,5 @@
 import { apiService } from './apiService';
+import { config } from '../config/env';
 
 export interface UserData {
   id: string;
@@ -91,7 +92,7 @@ export const userService = {
       const formData = new FormData();
       formData.append('avatar', file);
       
-      const response = await fetch(`http://localhost:8000/api/auth/users/${userId}/avatar/`, {
+      const response = await fetch(`${config.apiUrl}/api/auth/users/${userId}/avatar/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

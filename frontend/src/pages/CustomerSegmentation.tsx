@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { config } from '../config/env';
 import {
   Box,
   Container,
@@ -71,7 +72,7 @@ const CustomerSegmentation: React.FC = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8000/api/auth/users/', {
+      const response = await axios.get(`${config.apiUrl}/api/auth/users/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = Array.isArray(response.data) ? response.data : [];
@@ -86,7 +87,7 @@ const CustomerSegmentation: React.FC = () => {
 
   const loadSegmentStats = async () => {
     try {
-      await axios.get('http://localhost:8000/api/ml/dashboard-summary/', {
+      await axios.get(`${config.apiUrl}/api/ml/dashboard-summary/`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       

@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { config } from '../config/env';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = `${config.apiUrl}/api`;
 
 // ============================================================================
 // TypeScript Interfaces
