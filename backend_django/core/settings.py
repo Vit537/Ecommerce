@@ -220,7 +220,7 @@ CORS_ALLOWED_HEADERS = [
 # CSRF Settings for API
 CSRF_TRUSTED_ORIGINS_STR = config(
     'CSRF_TRUSTED_ORIGINS',
-    default='http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,https://ecommerce-frontend-5q5ie6onnq-uc.a.run.app'
+    default='http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,https://ecommerce-frontend-5q5ie6onnq-uc.a.run.app,https://ecommerce-backend-930184937279.us-central1.run.app'
 )
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_STR.split(',') if origin.strip()]
 
