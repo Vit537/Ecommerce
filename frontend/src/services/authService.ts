@@ -84,6 +84,18 @@ class AuthService {
     return apiService.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, data);
   }
 
+  async updateProfile(data: Partial<User>): Promise<User> {
+    const response = await apiService.patch('/auth/user/profile/', data);
+    const updatedUser = response.data;
+    this.setUser(updatedUser);
+    return updatedUser;
+  }
+
+  async getUserProfile(): Promise<User> {
+    const response = await apiService.get('/auth/user/profile/');
+    return response.data;
+  }
+
   async verifyEmail(token: string): Promise<void> {
     return apiService.post(API_ENDPOINTS.AUTH.VERIFY_EMAIL, { token });
   }

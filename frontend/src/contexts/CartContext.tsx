@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
-import { useAuth } from './AuthContext';
+// import { useAuth } from './AuthContext'; // COMENTADO - No se usa en las rutas demo
 import { cartService, Cart, CartItem, AddToCartRequest } from '../services/cartService';
 
 // Estado del carrito
@@ -10,6 +10,7 @@ interface CartState {
   totalPrice: number;
   loading: boolean;
   error: string | null;
+  isCartOpen: boolean;
 }
 
 type CartAction =
@@ -20,7 +21,9 @@ type CartAction =
   | { type: 'REMOVE_ITEM_SUCCESS'; payload: string }
   | { type: 'CLEAR_CART' }
   | { type: 'SET_ERROR'; payload: string }
-  | { type: 'CLEAR_ERROR' };
+  | { type: 'CLEAR_ERROR' }
+  | { type: 'TOGGLE_CART' }
+  | { type: 'SET_CART_OPEN'; payload: boolean };
 
 const initialState: CartState = {
   cart: null,
@@ -29,6 +32,7 @@ const initialState: CartState = {
   totalPrice: 0,
   loading: false,
   error: null,
+  isCartOpen: false,
 };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
@@ -104,6 +108,12 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         error: null,
       };
     
+    case 'TOGGLE_CART':
+      return { ...state, isCartOpen: !state.isCartOpen };
+    
+    case 'SET_CART_OPEN':
+      return { ...state, isCartOpen: action.payload };
+    
     case 'SET_ERROR':
       return { ...state, error: action.payload, loading: false };
     
@@ -122,23 +132,29 @@ interface CartContextType {
   totalPrice: number;
   loading: boolean;
   error: string | null;
+  isCartOpen: boolean;
   fetchCart: () => Promise<void>;
   addToCart: (productVariantId: string, quantity: number) => Promise<boolean>;
   updateCartItem: (itemId: string, quantity: number) => Promise<boolean>;
   removeCartItem: (itemId: string) => Promise<boolean>;
   clearCart: () => Promise<boolean>;
   clearError: () => void;
+  toggleCart: () => void;
+  openCart: () => void;
+  closeCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
-  const { isAuthenticated } = useAuth();
+  // const { isAuthenticated } = useAuth(); // COMENTADO - No se usa en las rutas demo
+  const isAuthenticated = false; // Para las demos, siempre es false
 
   // Obtener el carrito del usuario
   const fetchCart = useCallback(async () => {
     if (!isAuthenticated) {
+      // Para demos, usamos un carrito local en lugar de llamar al backend
       dispatch({ type: 'CLEAR_CART' });
       return;
     }
@@ -238,6 +254,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'CLEAR_ERROR' });
   };
 
+  // Funciones para manejar el sidebar del carrito
+  const toggleCart = (): void => {
+    dispatch({ type: 'TOGGLE_CART' });
+  };
+
+  const openCart = (): void => {
+    dispatch({ type: 'SET_CART_OPEN', payload: true });
+  };
+
+  const closeCart = (): void => {
+    dispatch({ type: 'SET_CART_OPEN', payload: false });
+  };
+
   // Cargar el carrito al montar y cuando cambie la autenticación
   useEffect(() => {
     if (isAuthenticated) {
@@ -254,12 +283,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     totalPrice: state.totalPrice,
     loading: state.loading,
     error: state.error,
+    isCartOpen: state.isCartOpen,
     fetchCart,
     addToCart,
     updateCartItem,
     removeCartItem,
     clearCart,
     clearError,
+    toggleCart,
+    openCart,
+    closeCart,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

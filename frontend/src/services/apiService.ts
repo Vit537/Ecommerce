@@ -26,12 +26,14 @@ class ApiService {
 
   constructor() {
     this.axiosInstance = axios.create({
-      baseURL: `${API_CONFIG.BASE_URL}/api`,
+      baseURL: `${API_CONFIG.BASE_URL}${API_CONFIG.API_PREFIX}`,
       timeout: API_CONFIG.TIMEOUT,
       headers: {
         'Content-Type': 'application/json',
       },
     });
+
+    console.log('🔧 [ApiService] Base URL configurada:', `${API_CONFIG.BASE_URL}${API_CONFIG.API_PREFIX}`);
 
     this.setupInterceptors();
   }

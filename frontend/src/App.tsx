@@ -3,29 +3,34 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { ThemeContextProvider } from './contexts/ThemeContext';
-import LoginPage from './pages/LoginPage';
-import AdminDashboard from './pages/AdminDashboard';
-import EmployeeDashboard from './pages/EmployeeDashboard';
-import CustomerShop from './pages/CustomerShop';
-import ReportsPage from './pages/ReportsPage';
-import InventoryManagement from './pages/InventoryManagement';
-import EmployeeManagement from './pages/EmployeeManagement';
-import EmployeeDetail from './pages/EmployeeDetail';
-import EmployeeCreate from './pages/EmployeeCreate';
-import CustomerManagement from './pages/CustomerManagement';
-import POSSystem from './pages/POSSystem';
-import UsersThisMonth from './pages/UsersThisMonth';
-import MLDashboard from './pages/MLDashboard';
-import ProductRecommendations from './pages/ProductRecommendations';
-import CustomerSegmentation from './pages/CustomerSegmentation';
-import MLModelAdmin from './pages/MLModelAdmin';
-import UserProfile from './pages/UserProfile';
-import AuthDebug from './pages/AuthDebug';
-import LoadingSpinner from './components/LoadingSpinner';
-import ChatbotWidget from './components/ChatbotWidget';
 import { useAuth } from './contexts/AuthContext';
 
-// Componente para rutas protegidas
+// ========================================
+// IMPORTS DE PÁGINAS Y COMPONENTES
+// ========================================
+import LoginPage from './pages/LoginPage';
+
+
+// COMPONENTES DE LAS MEJORAS
+// ========================================
+import AdminNavbar from './components/admin/Navbar/AdminNavbar';
+import CashierLayout from './components/cashier/POS/CashierLayout';
+import CustomerLayout from './components/customer/Shop/CustomerLayout';
+import CartSidebar from './components/cart/CartSidebar';
+import CheckoutPage from './pages/CheckoutPage';
+
+// Páginas de Administración
+import ProductsManagement from './pages/admin/ProductsManagementGrid';
+import CategoriesManagement from './pages/admin/CategoriesManagementTable';
+import ReportsPage from './pages/admin/ReportsPage';
+
+// Página de Perfil de Usuario
+import UserProfile from './pages/UserProfile';
+import ForgotPassword from './pages/ForgotPassword';
+
+// ========================================
+// COMPONENTE PROTECTEDROUTE
+// ========================================
 const ProtectedRoute: React.FC<{ 
   children: React.ReactNode; 
   requiredRole?: string;
@@ -34,279 +39,213 @@ const ProtectedRoute: React.FC<{
   const { isAuthenticated, user, loading } = useAuth();
 
   if (loading) {
-    return <LoadingSpinner fullScreen text="Verificando autenticación..." />;
+    return (
+      <div className="min-h-screen bg-secondary flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-700">Verificando autenticación...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
+    console.log('🔒 [ProtectedRoute] Usuario no autenticado, redirigiendo a login');
     return <Navigate to="/login" replace />;
   }
 
+  // Obtener el rol del usuario (maneja múltiples formatos)
+  const userRole = user?.role?.toLowerCase() || 
+                   user?.user_type?.toLowerCase() || 
+                   (user?.is_admin ? 'admin' : null) ||
+                   (user?.is_employee ? 'cajero' : null) ||
+                   (user?.is_customer ? 'cliente' : null) ||
+                   'cliente';
+
+  console.log('🔒 [ProtectedRoute] Usuario:', user?.email, 'Rol:', userRole);
+  console.log('🔒 [ProtectedRoute] Roles permitidos:', allowedRoles);
+
   // Verificar rol específico
-  if (requiredRole && user?.role !== requiredRole) {
+  if (requiredRole && userRole !== requiredRole.toLowerCase()) {
+    console.log('🔒 [ProtectedRoute] Rol requerido no coincide, redirigiendo a unauthorized');
     return <Navigate to="/unauthorized" replace />;
   }
 
   // Verificar roles permitidos
-  if (allowedRoles && user?.role && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />;
+  if (allowedRoles && allowedRoles.length > 0) {
+    const allowedRolesLower = allowedRoles.map(r => r.toLowerCase());
+    const hasPermission = allowedRolesLower.includes(userRole);
+    
+    if (!hasPermission) {
+      console.log('🔒 [ProtectedRoute] Usuario no tiene permisos, redirigiendo a unauthorized');
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
+  console.log('✅ [ProtectedRoute] Acceso permitido');
   return <>{children}</>;
 };
 
-// Componente de rutas dentro del contexto de Auth
-const AppRoutes: React.FC = () => {
-  const { isAuthenticated, user } = useAuth();
 
-  return (
-    <Routes>
-      <Route 
-        path="/login" 
-        element={
-          isAuthenticated ? (
-            (user?.role === 'admin' || user?.is_admin) ? <Navigate to="/admin" replace /> :
-            (user?.role === 'employee' || user?.is_employee) ? <Navigate to="/employee" replace /> :
-            <Navigate to="/shop" replace />
-          ) : (
-            <LoginPage />
-          )
-        } 
-      />
-      
-      <Route 
-        path="/admin" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'admin' || user?.is_admin ? <AdminDashboard /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/employee" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'employee' || user?.role === 'admin' || user?.is_employee || user?.is_admin ? <EmployeeDashboard /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/shop" 
-        element={
-          <ProtectedRoute>
-            <CustomerShop />
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/reports" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'admin' || user?.role === 'employee' || user?.is_admin || user?.is_employee ? <ReportsPage /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/inventory" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'admin' || user?.role === 'employee' || user?.is_admin || user?.is_employee ? <InventoryManagement /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/employees" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'admin' || user?.is_admin ? <EmployeeManagement /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/admin/employees" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'admin' || user?.is_admin ? <EmployeeManagement /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/admin/employees/new" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'admin' || user?.is_admin ? <EmployeeCreate /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/admin/employees/:id" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'admin' || user?.is_admin ? <EmployeeDetail /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/customers" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'admin' || user?.is_admin ? <CustomerManagement /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/pos" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'employee' || user?.role === 'admin' || user?.is_employee || user?.is_admin ? <POSSystem /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/auth/users-this-month" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'admin' || user?.is_admin ? <UsersThisMonth /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/ml-dashboard" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'admin' || user?.is_admin ? <MLDashboard /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/ml/product-recommendations" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'admin' || user?.is_admin ? <ProductRecommendations /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/ml/customer-segmentation" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'admin' || user?.is_admin ? <CustomerSegmentation /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/ml/model-admin" 
-        element={
-          <ProtectedRoute>
-            {user?.role === 'admin' || user?.is_admin ? <MLModelAdmin /> : <Navigate to="/unauthorized" replace />}
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/profile" 
-        element={
-          <ProtectedRoute>
-            <UserProfile />
-          </ProtectedRoute>
-        } 
-      />
-
-      <Route 
-        path="/debug" 
-        element={<AuthDebug />}
-      />
-
-      <Route 
-        path="/unauthorized" 
-        element={
-          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-red-600 mb-4">Acceso Denegado</h1>
-              <p className="text-gray-600 mb-4">No tienes permisos para acceder a esta página.</p>
-              <button
-                onClick={() => window.location.href = '/login'}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-              >
-                Volver al Login
-              </button>
-            </div>
-          </div>
-        } 
-      />
-
-      <Route 
-        path="/" 
-        element={
-          isAuthenticated ? (
-            (user?.role === 'admin' || user?.is_admin) ? <Navigate to="/admin" replace /> :
-            (user?.role === 'employee' || user?.is_employee) ? <Navigate to="/employee" replace /> :
-            <Navigate to="/shop" replace />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        } 
-      />
-
-      <Route 
-        path="*" 
-        element={
-          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">Página No Encontrada</h1>
-              <p className="text-gray-600 mb-4">La página que buscas no existe.</p>
-              <button
-                onClick={() => window.location.href = '/'}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-              >
-                Ir al Inicio
-              </button>
-            </div>
-          </div>
-        } 
-      />
-    </Routes>
-  );
-};
+// ========================================
+// COMPONENTE APP PRINCIPAL
+// ========================================
 
 const App: React.FC = () => {
   return (
     <Router>
       <AuthProvider>
-        <AuthenticatedApp />
+        <ThemeContextProvider>
+          <CartProvider>
+            <Routes>
+              {/* ========================================
+                  RUTA DE LOGIN
+                  ======================================== */}
+              <Route path="/login" element={<LoginPage />} />
+
+              {/* ========================================
+                  RUTAS DE DEMOSTRACIÓN (MEJORAS)
+                  ======================================== */}
+              
+              {/* Panel de Administración - Diseño minimalista
+              <Route path="/demo/admin" element={<AdminNavbar />} />
+              
+              {/* Sistema POS para Cajeros */}
+              {/* <Route path="/demo/cashier" element={<CashierLayout />} /> */}
+              
+              {/* Tienda para Clientes - Sportswear Design */}
+              {/* <Route path="/demo/customer" element={<CustomerLayout />} /> */}
+              
+              {/* Proceso de Checkout en 3 pasos */}
+              {/* <Route path="/demo/checkout" element={
+                <>
+                  <CheckoutPage />
+                  <CartSidebar />
+                </>
+              } /> */} 
+
+              {/* ========================================
+                  RUTAS AUTENTICADAS CON ROLES
+                  ======================================== */}
+              
+              {/* Ruta para Admin y Gerente - Dashboard */}
+              <Route path="/admin" element={
+                <ProtectedRoute allowedRoles={['admin', 'gerente']}>
+                  <AdminNavbar />
+                </ProtectedRoute>
+              } />
+
+              {/* Ruta específica para Dashboard */}
+              <Route path="/admin/dashboard" element={
+                <ProtectedRoute allowedRoles={['admin', 'gerente']}>
+                  <AdminNavbar />
+                </ProtectedRoute>
+              } />
+
+              {/* Rutas de Gestión Admin */}
+              <Route path="/admin/products" element={
+                <ProtectedRoute allowedRoles={['admin', 'gerente']}>
+                  <ProductsManagement />
+                </ProtectedRoute>
+              } />
+
+              {/* Reports - Admin area (wrapped by AdminNavbar inside the page or explicitly here) */}
+              <Route path="/admin/reports" element={
+                <ProtectedRoute allowedRoles={['admin', 'gerente']}>
+              
+                  <ReportsPage />
+              
+                </ProtectedRoute>
+              } />
+
+              <Route path="/admin/categories" element={
+                <ProtectedRoute allowedRoles={['admin', 'gerente']}>
+                  <CategoriesManagement />
+                </ProtectedRoute>
+              } />
+
+              {/* Ruta para Cajero */}
+              <Route path="/pos" element={
+                <ProtectedRoute allowedRoles={['cajero', 'admin', 'gerente']}>
+                  <CashierLayout />
+                </ProtectedRoute>
+              } />
+
+              {/* Ruta para Cliente (Shop) - PÚBLICA */}
+              <Route path="/shop" element={<CustomerLayout />} />
+
+              {/* Ruta para Perfil de Usuario */}
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <UserProfile />
+                </ProtectedRoute>
+              } />
+
+            
+
+              {/* Ruta para Checkout (requiere autenticación) */}
+              <Route path="/checkout" element={
+                <ProtectedRoute>
+                  <CheckoutPage />
+                  <CartSidebar />
+                </ProtectedRoute>
+              } />
+
+              {/* Página de acceso denegado */}
+              <Route path="/unauthorized" element={
+                <div className="min-h-screen bg-secondary flex items-center justify-center p-4">
+                  <div className="text-center max-w-md">
+                    <h1 className="text-4xl font-bold text-error mb-4">Acceso Denegado</h1>
+                    <p className="text-gray-700 mb-6">No tienes permisos para acceder a esta página.</p>
+                    <button
+                      onClick={() => window.location.href = '/login'}
+                      className="btn-primary"
+                    >
+                      Volver al Login
+                    </button>
+                  </div>
+                </div>
+              } />
+
+              {/* Ruta para recuperación de contraseña - PÚBLICA */}
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              
+              {/* Ruta raíz - Redirige a login */}
+              <Route path="/" element={<Navigate to="/login" replace />} />
+              
+              {/* 404 - Página no encontrada */}
+              <Route path="*" element={
+                <div className="min-h-screen bg-secondary flex items-center justify-center p-4">
+                  <div className="text-center max-w-md">
+                    <h1 className="text-4xl font-bold text-primary mb-4">404</h1>
+                    <h2 className="text-2xl font-semibold text-primary mb-2">Página No Encontrada</h2>
+                    <p className="text-gray-600 mb-6">La página que buscas no existe o ha sido movida.</p>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <button
+                        onClick={() => window.location.href = '/login'}
+                        className="btn-primary"
+                      >
+                        Ir al Login
+                      </button>
+                      <button
+                        onClick={() => window.location.href = '/shop'}
+                        className="btn-outline"
+                      >
+                        Ver Tienda
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              } />
+
+              {/* ========================================
+                  RUTAS DE DEMOSTRACIÓN (Sin autenticación)
+                  ======================================== */}
+            </Routes>
+          </CartProvider>
+        </ThemeContextProvider>
       </AuthProvider>
     </Router>
-  );
-};
-
-// Componente separado que se renderiza después de que AuthContext esté disponible
-const AuthenticatedApp: React.FC = () => {
-  const { isAuthenticated } = useAuth();
-
-  return (
-    <ThemeContextProvider>
-      <CartProvider>
-        <div className="App">
-          <AppRoutes />
-          {/* Chatbot Widget - Solo visible para usuarios autenticados */}
-          {isAuthenticated && <ChatbotWidget position="bottom-right" />}
-        </div>
-      </CartProvider>
-    </ThemeContextProvider>
   );
 };
 

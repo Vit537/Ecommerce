@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { ThemeProvider as MUIThemeProvider, createTheme, Theme } from '@mui/material';
-import { useAuth } from './AuthContext';
+// import { useAuth } from './AuthContext'; // COMENTADO - No se usa en las rutas demo
 
 // Definir las paletas de colores disponibles (actualizadas con los colores de las imágenes)
 export const colorPalettes = {
@@ -78,11 +78,12 @@ export const useTheme = () => {
 };
 
 export const ThemeContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  // const { user } = useAuth(); // COMENTADO - No se usa en las rutas demo
   
-  // Cargar preferencias guardadas del usuario
+  // Cargar preferencias guardadas (sin usuario específico por ahora)
   const getStoredPreferences = () => {
-    const userId = user?.id || 'guest';
+    // const userId = user?.id || 'guest'; // COMENTADO
+    const userId = 'demo'; // Usuario demo por defecto
     const stored = localStorage.getItem(`theme_preferences_${userId}`);
     if (stored) {
       try {
@@ -99,9 +100,10 @@ export const ThemeContextProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Guardar preferencias cuando cambien
   useEffect(() => {
-    const userId = user?.id || 'guest';
+    // const userId = user?.id || 'guest'; // COMENTADO
+    const userId = 'demo'; // Usuario demo por defecto
     localStorage.setItem(`theme_preferences_${userId}`, JSON.stringify({ mode, palette: colorPalette }));
-  }, [mode, colorPalette, user]);
+  }, [mode, colorPalette]); // Removed 'user' dependency
 
   const toggleMode = () => {
     setMode((prev) => (prev === 'light' ? 'dark' : 'light'));

@@ -98,10 +98,20 @@ export const API_ENDPOINTS = {
   
   // Reportes
   REPORTS: {
+    // Reportes dinámicos con IA
+    GENERATE: '/reports/generate/',
+    PREVIEW: '/reports/preview/',
+    HISTORY: '/reports/history/',
+    SUGGESTIONS: '/reports/suggestions/',
+    
+    // Reportes manuales
+    MANUAL_PREVIEW: '/reports/manual/preview/',
+    MANUAL_GENERATE: '/reports/manual/generate/',
+    
+    // Endpoints legacy
     SALES: '/reports/sales/',
     INVENTORY: '/reports/inventory/',
     CUSTOMERS: '/reports/customers/',
-    GENERATE: '/reports/generate/',
     EXPORT: '/reports/export/',
     AI_INSIGHTS: '/reports/ai-insights/',
   },

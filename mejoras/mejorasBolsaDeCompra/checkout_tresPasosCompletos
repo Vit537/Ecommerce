@@ -1,0 +1,819 @@
+import React, { useState } from 'react';
+import { MapPin, CreditCard, Check, ChevronRight, Lock, Truck, DollarSign, QrCode } from 'lucide-react';
+
+const CheckoutPage = () => {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    department: '',
+    zipCode: '',
+    notes: '',
+    paymentMethod: 'tarjeta',
+    cardNumber: '',
+    cardName: '',
+    expiryDate: '',
+    cvv: ''
+  });
+
+  const cartItems = [
+    { id: 1, name: 'Hoodie Training', price: 89.99, quantity: 2, image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=100' },
+    { id: 2, name: 'Pantalón Wide', price: 69.99, quantity: 1, image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=100' }
+  ];
+
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const shipping = 5.00;
+  const tax = subtotal * 0.13;
+  const total = subtotal + shipping + tax;
+
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleNextStep = () => {
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSubmitOrder = () => {
+    console.log('Orden completada:', formData);
+    alert('¡Orden realizada con éxito! Número de orden: #' + Math.floor(Math.random() * 10000));
+  };
+
+  const steps = [
+    { number: 1, name: 'Envío', icon: MapPin },
+    { number: 2, name: 'Pago', icon: CreditCard },
+    { number: 3, name: 'Confirmación', icon: Check }
+  ];
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#fafafa',
+      fontFamily: 'Inter, sans-serif'
+    }}>
+      {/* Header */}
+      <div style={{
+        backgroundColor: '#ffffff',
+        borderBottom: '1px solid #e8e8e8',
+        padding: '1.5rem 0'
+      }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: '0 1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <h1 style={{
+            fontSize: '1.5rem',
+            fontWeight: '700',
+            color: '#1a1a1a',
+            letterSpacing: '1px'
+          }}>
+            CHECKOUT
+          </h1>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.875rem',
+            color: '#666666'
+          }}>
+            <Lock size={16} />
+            Compra segura
+          </div>
+        </div>
+      </div>
+
+      {/* Progress Steps */}
+      <div style={{
+        backgroundColor: '#ffffff',
+        borderBottom: '1px solid #e8e8e8',
+        padding: '2rem 0'
+      }}>
+        <div style={{
+          maxWidth: '800px',
+          margin: '0 auto',
+          padding: '0 1.5rem'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            position: 'relative'
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: '20px',
+              left: '10%',
+              right: '10%',
+              height: '2px',
+              backgroundColor: '#e8e8e8',
+              zIndex: 0
+            }}>
+              <div style={{
+                height: '100%',
+                backgroundColor: '#1a1a1a',
+                width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
+                transition: 'width 0.3s'
+              }} />
+            </div>
+
+            {steps.map((step) => {
+              const Icon = step.icon;
+              const isActive = currentStep === step.number;
+              const isCompleted = currentStep > step.number;
+
+              return (
+                <div key={step.number} style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    backgroundColor: isActive || isCompleted ? '#1a1a1a' : '#ffffff',
+                    border: `2px solid ${isActive || isCompleted ? '#1a1a1a' : '#e8e8e8'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: isActive || isCompleted ? '#ffffff' : '#999999',
+                    transition: 'all 0.3s',
+                    marginBottom: '0.5rem'
+                  }}>
+                    {isCompleted ? <Check size={20} /> : <Icon size={20} />}
+                  </div>
+                  <span style={{
+                    fontSize: '0.875rem',
+                    fontWeight: isActive ? '600' : '400',
+                    color: isActive || isCompleted ? '#1a1a1a' : '#999999'
+                  }}>
+                    {step.name}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '3rem 1.5rem',
+        display: 'grid',
+        gridTemplateColumns: '1fr 400px',
+        gap: '2rem'
+      }}>
+        {/* Left Column */}
+        <div>
+          {/* Step 1: Envío */}
+          {currentStep === 1 && (
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '1rem',
+              border: '1px solid #e8e8e8',
+              padding: '2rem'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                marginBottom: '1.5rem'
+              }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  backgroundColor: '#f5f5f5',
+                  borderRadius: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Truck size={24} color="#1a1a1a" />
+                </div>
+                <div>
+                  <h2 style={{
+                    fontSize: '1.25rem',
+                    fontWeight: '700',
+                    color: '#1a1a1a',
+                    margin: 0
+                  }}>
+                    Dirección de Envío
+                  </h2>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#666666',
+                    margin: 0
+                  }}>
+                    ¿Dónde quieres recibir tu pedido?
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gap: '1rem' }}>
+                <input
+                  type="text"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  placeholder="Nombre completo *"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1rem',
+                    border: '1px solid #e8e8e8',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    outline: 'none'
+                  }}
+                />
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="Email *"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '1px solid #e8e8e8',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
+                      outline: 'none'
+                    }}
+                  />
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="Teléfono *"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '1px solid #e8e8e8',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  placeholder="Dirección completa *"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1rem',
+                    border: '1px solid #e8e8e8',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    outline: 'none'
+                  }}
+                />
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                  <input
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    placeholder="Ciudad *"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '1px solid #e8e8e8',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
+                      outline: 'none'
+                    }}
+                  />
+                  <select
+                    name="department"
+                    value={formData.department}
+                    onChange={handleInputChange}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '1px solid #e8e8e8',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
+                      outline: 'none',
+                      backgroundColor: '#ffffff'
+                    }}
+                  >
+                    <option value="">Departamento</option>
+                    <option value="La Paz">La Paz</option>
+                    <option value="Santa Cruz">Santa Cruz</option>
+                    <option value="Cochabamba">Cochabamba</option>
+                  </select>
+                  <input
+                    type="text"
+                    name="zipCode"
+                    value={formData.zipCode}
+                    onChange={handleInputChange}
+                    placeholder="CP"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '1px solid #e8e8e8',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  placeholder="Notas de entrega (opcional)"
+                  rows="3"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1rem',
+                    border: '1px solid #e8e8e8',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                    resize: 'vertical',
+                    fontFamily: 'inherit'
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Pago */}
+          {currentStep === 2 && (
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '1rem',
+              border: '1px solid #e8e8e8',
+              padding: '2rem'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                marginBottom: '1.5rem'
+              }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  backgroundColor: '#f5f5f5',
+                  borderRadius: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <CreditCard size={24} color="#1a1a1a" />
+                </div>
+                <div>
+                  <h2 style={{
+                    fontSize: '1.25rem',
+                    fontWeight: '700',
+                    color: '#1a1a1a',
+                    margin: 0
+                  }}>
+                    Método de Pago
+                  </h2>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#666666',
+                    margin: 0
+                  }}>
+                    Selecciona cómo deseas pagar
+                  </p>
+                </div>
+              </div>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '1rem',
+                marginBottom: '2rem'
+              }}>
+                {[
+                  { id: 'tarjeta', label: 'Tarjeta', icon: CreditCard },
+                  { id: 'efectivo', label: 'Efectivo', icon: DollarSign },
+                  { id: 'qr', label: 'QR', icon: QrCode }
+                ].map(method => {
+                  const Icon = method.icon;
+                  const isSelected = formData.paymentMethod === method.id;
+                  return (
+                    <button
+                      key={method.id}
+                      onClick={() => setFormData({ ...formData, paymentMethod: method.id })}
+                      style={{
+                        padding: '1rem',
+                        border: isSelected ? '2px solid #1a1a1a' : '1px solid #e8e8e8',
+                        borderRadius: '0.75rem',
+                        backgroundColor: isSelected ? '#f5f5f5' : '#ffffff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Icon size={24} color={isSelected ? '#1a1a1a' : '#666666'} />
+                      <span style={{
+                        fontSize: '0.875rem',
+                        fontWeight: isSelected ? '600' : '400',
+                        color: isSelected ? '#1a1a1a' : '#666666'
+                      }}>
+                        {method.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {formData.paymentMethod === 'tarjeta' && (
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  <input
+                    type="text"
+                    name="cardNumber"
+                    value={formData.cardNumber}
+                    onChange={handleInputChange}
+                    placeholder="Número de tarjeta"
+                    maxLength="19"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '1px solid #e8e8e8',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
+                      outline: 'none'
+                    }}
+                  />
+                  <input
+                    type="text"
+                    name="cardName"
+                    value={formData.cardName}
+                    onChange={handleInputChange}
+                    placeholder="Nombre en la tarjeta"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '1px solid #e8e8e8',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.875rem',
+                      outline: 'none'
+                    }}
+                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <input
+                      type="text"
+                      name="expiryDate"
+                      value={formData.expiryDate}
+                      onChange={handleInputChange}
+                      placeholder="MM/YY"
+                      maxLength="5"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 1rem',
+                        border: '1px solid #e8e8e8',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.875rem',
+                        outline: 'none'
+                      }}
+                    />
+                    <input
+                      type="text"
+                      name="cvv"
+                      value={formData.cvv}
+                      onChange={handleInputChange}
+                      placeholder="CVV"
+                      maxLength="3"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 1rem',
+                        border: '1px solid #e8e8e8',
+                        borderRadius: '0.5rem',
+                        fontSize: '0.875rem',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {formData.paymentMethod === 'efectivo' && (
+                <div style={{
+                  backgroundColor: '#fffbf0',
+                  border: '1px solid #ffd700',
+                  borderRadius: '0.75rem',
+                  padding: '1rem',
+                  fontSize: '0.875rem',
+                  color: '#666666'
+                }}>
+                  💵 Pagarás en efectivo al recibir tu pedido
+                </div>
+              )}
+
+              {formData.paymentMethod === 'qr' && (
+                <div style={{
+                  backgroundColor: '#f0f9ff',
+                  border: '1px solid #0ea5e9',
+                  borderRadius: '0.75rem',
+                  padding: '1rem',
+                  fontSize: '0.875rem',
+                  color: '#666666',
+                  textAlign: 'center'
+                }}>
+                  📱 Código QR generado al confirmar
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: Confirmación */}
+          {currentStep === 3 && (
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '1rem',
+              border: '1px solid #e8e8e8',
+              padding: '2rem'
+            }}>
+              <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                <div style={{
+                  width: '80px',
+                  height: '80px',
+                  backgroundColor: '#e8f5e9',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 1rem'
+                }}>
+                  <Check size={40} color="#4caf50" />
+                </div>
+                <h2 style={{
+                  fontSize: '1.5rem',
+                  fontWeight: '700',
+                  color: '#1a1a1a',
+                  marginBottom: '0.5rem'
+                }}>
+                  ¡Todo listo!
+                </h2>
+                <p style={{
+                  fontSize: '0.875rem',
+                  color: '#666666'
+                }}>
+                  Revisa tu orden antes de confirmar
+                </p>
+              </div>
+
+              <div style={{
+                backgroundColor: '#fafafa',
+                borderRadius: '0.75rem',
+                padding: '1.5rem',
+                marginBottom: '1rem'
+              }}>
+                <h3 style={{
+                  fontSize: '0.875rem',
+                  fontWeight: '700',
+                  color: '#1a1a1a',
+                  marginBottom: '1rem',
+                  textTransform: 'uppercase'
+                }}>
+                  Dirección de envío
+                </h3>
+                <p style={{ fontSize: '0.875rem', color: '#666666', marginBottom: '0.25rem' }}>
+                  <strong>{formData.fullName || 'Juan Pérez'}</strong>
+                </p>
+                <p style={{ fontSize: '0.875rem', color: '#666666' }}>
+                  {formData.address || 'Calle principal #123'}, {formData.city || 'La Paz'}
+                </p>
+              </div>
+
+              <div style={{
+                backgroundColor: '#fafafa',
+                borderRadius: '0.75rem',
+                padding: '1.5rem'
+              }}>
+                <h3 style={{
+                  fontSize: '0.875rem',
+                  fontWeight: '700',
+                  color: '#1a1a1a',
+                  marginBottom: '1rem',
+                  textTransform: 'uppercase'
+                }}>
+                  Método de pago
+                </h3>
+                <p style={{ fontSize: '0.875rem', color: '#666666' }}>
+                  {formData.paymentMethod === 'tarjeta' && '💳 Tarjeta de crédito/débito'}
+                  {formData.paymentMethod === 'efectivo' && '💵 Pago en efectivo'}
+                  {formData.paymentMethod === 'qr' && '📱 Código QR'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Buttons */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginTop: '2rem',
+            gap: '1rem'
+          }}>
+            {currentStep > 1 && (
+              <button
+                onClick={handlePreviousStep}
+                style={{
+                  flex: 1,
+                  padding: '1rem',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e8e8e8',
+                  borderRadius: '0.75rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#666666',
+                  cursor: 'pointer'
+                }}
+              >
+                Volver
+              </button>
+            )}
+            <button
+              onClick={currentStep === 3 ? handleSubmitOrder : handleNextStep}
+              style={{
+                flex: 2,
+                padding: '1rem',
+                backgroundColor: '#1a1a1a',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '0.75rem',
+                fontSize: '0.875rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              {currentStep === 3 ? 'Confirmar Pedido' : 'Continuar'}
+              {currentStep !== 3 && <ChevronRight size={18} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Right Column - Summary */}
+        <div>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '1rem',
+            border: '1px solid #e8e8e8',
+            padding: '1.5rem',
+            position: 'sticky',
+            top: '2rem'
+          }}>
+            <h3 style={{
+              fontSize: '1rem',
+              fontWeight: '700',
+              color: '#1a1a1a',
+              marginBottom: '1.5rem'
+            }}>
+              Resumen del pedido
+            </h3>
+
+            {/* Products */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              {cartItems.map(item => (
+                <div key={item.id} style={{
+                  display: 'flex',
+                  gap: '1rem',
+                  marginBottom: '1rem',
+                  paddingBottom: '1rem',
+                  borderBottom: '1px solid #e8e8e8'
+                }}>
+                  <img src={item.image} alt={item.name} style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '0.5rem',
+                    objectFit: 'cover'
+                  }} />
+                  <div style={{ flex: 1 }}>
+                    <p style={{
+                      fontSize: '0.875rem',
+                      fontWeight: '600',
+                      color: '#1a1a1a',
+                      marginBottom: '0.25rem'
+                    }}>
+                      {item.name}
+                    </p>
+                    <p style={{
+                      fontSize: '0.75rem',
+                      color: '#666666'
+                    }}>
+                      Cantidad: {item.quantity}
+                    </p>
+                  </div>
+                  <span style={{
+                    fontSize: '0.875rem',
+                    fontWeight: '700',
+                    color: '#1a1a1a'
+                  }}>
+                    ${(item.price * item.quantity).toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Totals */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: '0.5rem'
+              }}>
+                <span style={{ fontSize: '0.875rem', color: '#666666' }}>Subtotal</span>
+                <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1a1a1a' }}>
+                  ${subtotal.toFixed(2)}
+                </span>
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: '0.5rem'
+              }}>
+                <span style={{ fontSize: '0.875rem', color: '#666666' }}>Envío</span>
+                <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1a1a1a' }}>
+                  ${shipping.toFixed(2)}
+                </span>
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                paddingBottom: '1rem',
+                borderBottom: '2px solid #e8e8e8'
+              }}>
+                <span style={{ fontSize: '0.875rem', color: '#666666' }}>IVA (13%)</span>
+                <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1a1a1a' }}>
+                  ${tax.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              backgroundColor: '#f5f5f5',
+              padding: '1rem',
+              borderRadius: '0.75rem'
+            }}>
+              <span style={{
+                fontSize: '1rem',
+                fontWeight: '700',
+                color: '#1a1a1a'
+              }}>
+                Total
+              </span>
+              <span style={{
+                fontSize: '1.75rem',
+                fontWeight: '700',
+                color: '#1a1a1a'
+              }}>
+                ${total.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CheckoutPage;
