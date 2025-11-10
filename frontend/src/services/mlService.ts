@@ -83,13 +83,15 @@ export interface CustomerSegment {
 }
 
 export interface InventoryAlert {
+  id?: string;
   product_id: string;
   product_name: string;
   alert_type: string;
   current_stock: number;
-  recommended_stock: number;
+  recommended_stock?: number;
   urgency_level: number;
   message: string;
+  resolved?: boolean;
 }
 
 export interface InventoryAnalysisResponse {
@@ -239,11 +241,39 @@ export const getTrainingLogs = async () => {
   return response.data;
 };
 
+/**
+ * Obtener alertas de inventario
+ */
+export const getInventoryAlerts = async (resolved?: boolean) => {
+  const params = resolved !== undefined ? { resolved } : {};
+  const response = await apiClient.get('/inventory-alerts/', { params });
+  return response.data;
+};
+
+/**
+ * Resolver una alerta de inventario
+ */
+export const resolveInventoryAlert = async (alertId: string) => {
+  const response = await apiClient.post(`/inventory-alerts/${alertId}/resolve/`);
+  return response.data;
+};
+
+/**
+ * Entrenar modelo de segmentación de clientes con n_clusters personalizado
+ */
+export const trainCustomerSegmentationModelAdvanced = async (nClusters: number = 6) => {
+  const response = await apiClient.post('/train-customer-segmentation/', {
+    n_clusters: nClusters,
+  });
+  return response.data;
+};
+
 export default {
   // Training
   trainSalesForecastModel,
   trainProductRecommendationModel,
   trainCustomerSegmentationModel,
+  trainCustomerSegmentationModelAdvanced,
   
   // Predictions
   predictSales,
@@ -254,6 +284,8 @@ export default {
   analyzeInventory,
   getReorderRecommendations,
   getInventoryHealth,
+  getInventoryAlerts,
+  resolveInventoryAlert,
   
   // Dashboard
   getDashboardSummary,

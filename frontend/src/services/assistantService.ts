@@ -141,6 +141,7 @@ class AssistantService {
       const response = await axios.get(`${API_URL}/assistant/quick-actions/`, {
         headers: this.getAuthHeaders(),
       });
+      console.log("Quick Actions response:", response.data);
       return response.data;
     } catch (error: any) {
       console.error('Error getting quick actions:', error.response?.data || error.message);

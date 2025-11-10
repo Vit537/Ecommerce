@@ -1,121 +1,147 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  ChevronRight, 
-  ChevronDown, 
-  Home, 
-  Users, 
-  Package, 
-  ShoppingCart, 
-  Shield, 
-  UserCog, 
-  Brain, 
-  MessageSquare, 
-  BarChart3, 
-  Settings, 
-  X, 
-  Menu, 
-  Bell, 
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  ChevronRight,
+  ChevronDown,
+  Home,
+  Users,
+  Package,
+  ShoppingCart,
+  Shield,
+  UserCog,
+  Brain,
+  MessageSquare,
+  BarChart3,
+  Settings,
+  X,
+  Menu,
+  Bell,
   Search,
   User,
   LogOut,
-  ChevronUp
-} from 'lucide-react';
-import { useAuth } from '../../../contexts/AuthContext';
+  ChevronUp,
+  Sparkles,
+} from "lucide-react";
+import { useAuth } from "../../../contexts/AuthContext";
+import AIAssistantChatEnhanced from "../AIAssistant/AIAssistantChatEnhanced";
+// import AIAssistantChat from '../AIAssistant/AIAssistantChat';
 
 const navigationConfig = [
   {
-    id: 'dashboard',
-    label: 'Dashboard',
+    id: "dashboard",
+    label: "Dashboard",
     icon: Home,
-    path: '/admin',
-    section: 'main'
+    path: "/admin",
+    section: "main",
   },
   {
-    id: 'products',
-    label: 'Productos',
+    id: "products",
+    label: "Inventario",
     icon: Package,
-    section: 'main',
+    section: "main",
     subsections: [
-      { id: 'products-list', label: 'Lista de productos', path: '/admin/products' },
-      { id: 'categories', label: 'Categorías', path: '/admin/categories' },
+      {
+        id: "products-list",
+        label: "Lista de productos",
+        path: "/admin/products",
+      },
+      { id: "categories", label: "Categorías", path: "/admin/categories" },
       // { id: 'brands', label: 'Marcas', path: '/admin/brands' },
       // { id: 'variants', label: 'Variantes', path: '/admin/variants' },
       // { id: 'inventory', label: 'Inventario', path: '/admin/inventory' }
-    ]
+    ],
   },
   {
-    id: 'orders',
-    label: 'Órdenes',
+    id: "orders",
+    label: "Órdenes",
     icon: ShoppingCart,
-    section: 'main',
+    section: "main",
     subsections: [
-      { id: 'orders-list', label: 'Todas las órdenes', path: '/admin/orders' },
-      { id: 'payments', label: 'Pagos', path: '/admin/payments' },
-      { id: 'invoices', label: 'Facturas', path: '/admin/invoices' },
-      { id: 'cart', label: 'Carritos', path: '/admin/carts' }
-    ]
+      { id: "orders-list", label: "Todas las órdenes", path: "/admin/orders" },
+      { id: "payments", label: "Pagos", path: "/admin/payments" },
+      { id: "invoices", label: "Facturas", path: "/admin/invoices" },
+      { id: "cart", label: "Carritos", path: "/admin/carts" },
+    ],
   },
   {
-    id: 'customers',
-    label: 'Clientes',
+    id: "customers",
+    label: "Usuarios del sistema",
     icon: Users,
-    section: 'main',
+    section: "main",
     subsections: [
-      { id: 'customers-list', label: 'Todos los clientes', path: '/admin/customers' },
-      { id: 'addresses', label: 'Direcciones', path: '/admin/addresses' }
-    ]
+      {
+        id: "customers-list",
+        label: "Todos los clientes",
+        path: "/admin/customers",
+      },
+      { id: "addresses", label: "Direcciones", path: "/admin/addresses" },
+    ],
   },
   {
-    id: 'employees',
-    label: 'Empleados',
+    id: "employees",
+    label: "Empleados",
     icon: UserCog,
-    section: 'main',
-    path: '/admin/employees'
+    section: "main",
+    path: "/admin/employees",
   },
   {
-    id: 'iam',
-    label: 'Seguridad',
+    id: "iam",
+    label: "Seguridad",
     icon: Shield,
-    section: 'security',
+    section: "security",
     subsections: [
-      { id: 'users', label: 'Usuarios', path: '/admin/users' },
-      { id: 'roles', label: 'Roles', path: '/admin/roles' },
-      { id: 'permissions', label: 'Permisos', path: '/admin/permissions' }
-    ]
+      { id: "users", label: "Usuarios", path: "/admin/users" },
+      { id: "roles", label: "Roles", path: "/admin/roles" },
+      { id: "permissions", label: "Permisos", path: "/admin/permissions" },
+    ],
   },
   {
-    id: 'ml',
-    label: 'Machine Learning',
+    id: "ml",
+    label: "Machine Learning",
     icon: Brain,
-    section: 'analytics',
+    section: "analytics",
     subsections: [
-      { id: 'predictions', label: 'Predicciones', path: '/admin/ml/predictions' },
-      { id: 'recommendations', label: 'Recomendaciones', path: '/admin/ml/recommendations' },
-      { id: 'trends', label: 'Tendencias', path: '/admin/ml/trends' }
-    ]
+      { id: "dashboard", label: "Dashboard ML", path: "/admin/ml/dashboard" },
+      {
+        id: "predictions",
+        label: "Predicciones",
+        path: "/admin/ml/predictions",
+      },
+      {
+        id: "recommendations",
+        label: "Recomendaciones",
+        path: "/admin/ml/recommendations",
+      },
+      { id: "trends", label: "Tendencias", path: "/admin/ml/trends" },
+      {
+        id: "customer-segmentation",
+        label: "Segmentación de Clientes",
+        path: "/admin/ml/customer-segmentation",
+      },
+    ],
   },
   {
-    id: 'reports',
-    label: 'Reportes',
+    id: "reports",
+    label: "Reportes",
     icon: BarChart3,
-    section: 'analytics',
-    path: '/admin/reports'
+    section: "analytics",
+    path: "/admin/reports",
   },
   {
-    id: 'assistant',
-    label: 'Asistente IA',
-    icon: MessageSquare,
-    section: 'tools',
-    path: '/admin/assistant'
+    id: "assistant",
+    label: "Asistente IA",
+    icon: Sparkles,
+    // icon: MessageSquare,
+    section: "tools",
+    // path: '/admin/assistant'
   },
   {
-    id: 'settings',
-    label: 'Configuración',
+    id: "settings",
+    label: "Configuración",
     icon: Settings,
-    section: 'tools',
-    path: '/admin/settings'
-  }
+    section: "tools",
+    path: "/admin/settings",
+  },
 ];
 
 interface AdminNavbarProps {
@@ -129,30 +155,37 @@ interface UserDropdownProps {
   handleItemClick: (id: string, path?: string) => void;
 }
 
-const UserDropdown: React.FC<UserDropdownProps> = ({ user, logout, handleItemClick }) => {
+const UserDropdown: React.FC<UserDropdownProps> = ({
+  user,
+  logout,
+  handleItemClick,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen]);
 
   const handleProfileClick = () => {
     setIsOpen(false);
-    handleItemClick('profile', '/profile');
+    handleItemClick("profile", "/profile");
   };
 
   const handleLogoutClick = () => {
@@ -169,48 +202,55 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ user, logout, handleItemCli
       >
         {/* Avatar */}
         <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-bold">
-          {user?.first_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+          {user?.first_name?.[0]?.toUpperCase() ||
+            user?.email?.[0]?.toUpperCase() ||
+            "U"}
         </div>
-        
+
         {/* User Name (hidden on small screens) */}
         <div className="hidden md:block text-left">
           <div className="text-sm font-medium text-gray-900">
-            {user?.first_name && user?.last_name 
-              ? `${user.first_name} ${user.last_name}` 
-              : user?.email?.split('@')[0] || 'Usuario'
-            }
+            {user?.first_name && user?.last_name
+              ? `${user.first_name} ${user.last_name}`
+              : user?.email?.split("@")[0] || "Usuario"}
           </div>
         </div>
-        
+
         {/* Chevron */}
-        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${
-          isOpen ? 'rotate-180' : ''
-        }`} />
+        <ChevronDown
+          className={`w-4 h-4 text-gray-500 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
         <>
           {/* Backdrop */}
-          <div className="fixed inset-0 bg-black bg-opacity-10 z-40" onClick={() => setIsOpen(false)} />
-          
+          <div
+            className="fixed inset-0 bg-black bg-opacity-10 z-40"
+            onClick={() => setIsOpen(false)}
+          />
+
           {/* Menu */}
           <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
             {/* User Info Header */}
             <div className="px-4 py-3 border-b border-gray-100">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white text-sm font-bold">
-                  {user?.first_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+                  {user?.first_name?.[0]?.toUpperCase() ||
+                    user?.email?.[0]?.toUpperCase() ||
+                    "U"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-gray-900 truncate">
-                    {user?.first_name && user?.last_name 
-                      ? `${user.first_name} ${user.last_name}` 
-                      : user?.email?.split('@')[0] || 'Usuario'
-                    }
+                    {user?.first_name && user?.last_name
+                      ? `${user.first_name} ${user.last_name}`
+                      : user?.email?.split("@")[0] || "Usuario"}
                   </div>
                   <div className="text-xs text-gray-500 truncate">
-                    {user?.email || 'Sin email'}
+                    {user?.email || "Sin email"}
                   </div>
                 </div>
               </div>
@@ -225,20 +265,20 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ user, logout, handleItemCli
                 <User className="w-4 h-4" />
                 <span>Mi Perfil</span>
               </button>
-              
+
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  handleItemClick('settings', '/settings');
+                  handleItemClick("settings", "/settings");
                 }}
                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <Settings className="w-4 h-4" />
                 <span>Configuración</span>
               </button>
-              
+
               <div className="border-t border-gray-100 my-1" />
-              
+
               <button
                 onClick={handleLogoutClick}
                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
@@ -260,30 +300,37 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [isNavOpen, setIsNavOpen] = useState(true);
-  const [activeItem, setActiveItem] = useState('dashboard');
+  const [activeItem, setActiveItem] = useState("dashboard");
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isChatMinimized, setIsChatMinimized] = useState(false);
 
   // Configurar el item activo basado en la ruta actual
   useEffect(() => {
     const currentPath = location.pathname;
-    console.log('🔗 [AdminNavbar] Ruta actual:', currentPath);
-    
+    console.log("🔗 [AdminNavbar] Ruta actual:", currentPath);
+
     let itemFound = false;
-    
+
     // Encontrar el item o subitem activo basado en la ruta
-    navigationConfig.forEach(item => {
+    navigationConfig.forEach((item) => {
       if (item.path === currentPath) {
         setActiveItem(item.id);
-        console.log('📍 [AdminNavbar] Item principal activo:', item.id);
+        console.log("📍 [AdminNavbar] Item principal activo:", item.id);
         itemFound = true;
         return;
       }
-      
+
       if (item.subsections) {
-        item.subsections.forEach(sub => {
+        item.subsections.forEach((sub) => {
           if (sub.path === currentPath) {
             setActiveItem(sub.id);
-            setOpenSections(prev => ({ ...prev, [item.id]: true }));
-            console.log('📍 [AdminNavbar] Subsección activa:', sub.id, 'del item:', item.id);
+            setOpenSections((prev) => ({ ...prev, [item.id]: true }));
+            console.log(
+              "📍 [AdminNavbar] Subsección activa:",
+              sub.id,
+              "del item:",
+              item.id
+            );
             itemFound = true;
             return;
           }
@@ -292,29 +339,41 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
     });
 
     if (!itemFound) {
-      console.log('⚠️ [AdminNavbar] No se encontró item para la ruta:', currentPath);
+      console.log(
+        "⚠️ [AdminNavbar] No se encontró item para la ruta:",
+        currentPath
+      );
     }
   }, [location.pathname]);
 
   const toggleSection = (id: string) => {
-    setOpenSections(prev => ({
+    setOpenSections((prev) => ({
       ...prev,
-      [id]: !prev[id]
+      [id]: !prev[id],
     }));
   };
 
   const handleItemClick = (id: string, path?: string) => {
-    console.log('🔗 [AdminNavbar] Click en item:', id, 'path:', path);
+    console.log("🔗 [AdminNavbar] Click en item:", id, "path:", path);
     setActiveItem(id);
     if (path) {
-      console.log('🚀 [AdminNavbar] Navegando a:', path);
+      console.log("🚀 [AdminNavbar] Navegando a:", path);
       navigate(path);
     } else {
-      console.log('⚠️ [AdminNavbar] No hay path para el item:', id);
+      switch (id) {
+        case "assistant":
+          setIsChatOpen(true);
+          setIsChatMinimized(false);
+          break;
+        // Puedes agregar más casos aquí en el futuro
+        default:
+          console.warn(`No hay acción definida para el item: ${id}`);
+      }
+      console.log("⚠️ [AdminNavbar] No hay path para el item:", id);
     }
   };
 
-  const NavItem = ({ item }: { item: typeof navigationConfig[0] }) => {
+  const NavItem = ({ item }: { item: (typeof navigationConfig)[0] }) => {
     const Icon = item.icon;
     const isOpen = openSections[item.id];
     const hasSubsections = item.subsections && item.subsections.length > 0;
@@ -324,7 +383,9 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
       <div className="mb-1">
         <div
           className={`flex items-center justify-between px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${
-            isActive && !hasSubsections ? 'bg-primary text-primary' : 'hover:bg-secondary'
+            isActive && !hasSubsections
+              ? "bg-primary text-primary"
+              : "hover:bg-secondary"
           }`}
           onClick={() => {
             if (hasSubsections) {
@@ -338,20 +399,19 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
             <Icon size={18} />
             <span className="text-sm font-medium">{item.label}</span>
           </div>
-          {hasSubsections && (
-            isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />
-          )}
+          {hasSubsections &&
+            (isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />)}
         </div>
-        
+
         {hasSubsections && isOpen && (
           <div className="mt-1 ml-10">
-            {item.subsections!.map(sub => (
+            {item.subsections!.map((sub) => (
               <div
                 key={sub.id}
                 className={`px-4 py-2.5 rounded-md cursor-pointer transition-all text-sm ${
-                  activeItem === sub.id 
-                    ? 'bg-secondary text-primary font-semibold' 
-                    : 'text-gray-600 hover:bg-gray-50'
+                  activeItem === sub.id
+                    ? "bg-secondary text-primary font-semibold"
+                    : "text-gray-600 hover:bg-gray-50"
                 }`}
                 onClick={() => handleItemClick(sub.id, sub.path)}
               >
@@ -365,10 +425,10 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
   };
 
   const groupedNav = {
-    main: navigationConfig.filter(item => item.section === 'main'),
-    security: navigationConfig.filter(item => item.section === 'security'),
-    analytics: navigationConfig.filter(item => item.section === 'analytics'),
-    tools: navigationConfig.filter(item => item.section === 'tools')
+    main: navigationConfig.filter((item) => item.section === "main"),
+    security: navigationConfig.filter((item) => item.section === "security"),
+    analytics: navigationConfig.filter((item) => item.section === "analytics"),
+    tools: navigationConfig.filter((item) => item.section === "tools"),
   };
 
   return (
@@ -376,7 +436,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
       {/* Sidebar */}
       <div
         className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col ${
-          isNavOpen ? 'w-[280px]' : 'w-0'
+          isNavOpen ? "w-[280px]" : "w-0"
         } overflow-hidden`}
       >
         {/* Header */}
@@ -385,9 +445,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
             <div className="text-xl font-bold text-primary tracking-wide">
               ADMIN
             </div>
-            <div className="text-xs text-gray-600 mt-1">
-              Panel de control
-            </div>
+            <div className="text-xs text-gray-600 mt-1">Panel de control</div>
           </div>
           <button
             onClick={() => setIsNavOpen(false)}
@@ -403,32 +461,38 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
             <div className="text-xs font-bold text-gray-500 uppercase tracking-wider px-4 mb-2">
               Principal
             </div>
-            {groupedNav.main.map(item => <NavItem key={item.id} item={item} />)}
+            {groupedNav.main.map((item) => (
+              <NavItem key={item.id} item={item} />
+            ))}
           </div>
 
           <div className="mb-6">
             <div className="text-xs font-bold text-gray-500 uppercase tracking-wider px-4 mb-2">
               Seguridad
             </div>
-            {groupedNav.security.map(item => <NavItem key={item.id} item={item} />)}
+            {groupedNav.security.map((item) => (
+              <NavItem key={item.id} item={item} />
+            ))}
           </div>
 
           <div className="mb-6">
             <div className="text-xs font-bold text-gray-500 uppercase tracking-wider px-4 mb-2">
               Análisis
             </div>
-            {groupedNav.analytics.map(item => <NavItem key={item.id} item={item} />)}
+            {groupedNav.analytics.map((item) => (
+              <NavItem key={item.id} item={item} />
+            ))}
           </div>
 
           <div>
             <div className="text-xs font-bold text-gray-500 uppercase tracking-wider px-4 mb-2">
               Herramientas
             </div>
-            {groupedNav.tools.map(item => <NavItem key={item.id} item={item} />)}
+            {groupedNav.tools.map((item) => (
+              <NavItem key={item.id} item={item} />
+            ))}
           </div>
         </div>
-
-
       </div>
 
       {/* Main Content */}
@@ -443,11 +507,11 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
               <Menu size={20} />
             </button>
           )}
-          
-          <div className={`flex-1 max-w-[500px] ${isNavOpen ? '' : 'ml-4'}`}>
+
+          <div className={`flex-1 max-w-[500px] ${isNavOpen ? "" : "ml-4"}`}>
             <div className="relative">
-              <Search 
-                size={18} 
+              <Search
+                size={18}
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
               />
               <input
@@ -459,13 +523,29 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
           </div>
 
           <div className="flex items-center gap-4 ml-4">
+            {/* AI Assistant Button */}
+            {/* <button 
+              onClick={() => {
+                setIsChatOpen(true);
+                setIsChatMinimized(false);
+              }}
+              className="relative p-2 hover:bg-gradient-to-r hover:from-black hover:to-gray-800 hover:text-white rounded-lg transition-all duration-200 text-primary group"
+              title="Asistente IA"
+            >
+              <Sparkles size={20} className="group-hover:scale-110 transition-transform" />
+            </button> */}
+
             <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors text-primary">
               <Bell size={20} />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
             </button>
-            
+
             {/* User Profile Dropdown */}
-            <UserDropdown user={user} logout={logout} handleItemClick={handleItemClick} />
+            <UserDropdown
+              user={user}
+              logout={logout}
+              handleItemClick={handleItemClick}
+            />
           </div>
         </div>
 
@@ -483,10 +563,34 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
               {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {[
-                  { label: 'Ventas Hoy', value: '$2,543', change: '+12.5%', icon: ShoppingCart, color: '#1a1a1a' },
-                  { label: 'Productos', value: '234', change: '+5', icon: Package, color: '#666666' },
-                  { label: 'Clientes', value: '1,234', change: '+23', icon: Users, color: '#999999' },
-                  { label: 'Órdenes', value: '89', change: '+8', icon: BarChart3, color: '#1a1a1a' }
+                  {
+                    label: "Ventas Hoy",
+                    value: "$2,543",
+                    change: "+12.5%",
+                    icon: ShoppingCart,
+                    color: "#1a1a1a",
+                  },
+                  {
+                    label: "Productos",
+                    value: "234",
+                    change: "+5",
+                    icon: Package,
+                    color: "#666666",
+                  },
+                  {
+                    label: "Clientes",
+                    value: "1,234",
+                    change: "+23",
+                    icon: Users,
+                    color: "#999999",
+                  },
+                  {
+                    label: "Órdenes",
+                    value: "89",
+                    change: "+8",
+                    icon: BarChart3,
+                    color: "#1a1a1a",
+                  },
                 ].map((stat, i) => {
                   const Icon = stat.icon;
                   return (
@@ -505,9 +609,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
                       <div className="text-3xl font-bold text-primary mb-1">
                         {stat.value}
                       </div>
-                      <div className="text-sm text-gray-600">
-                        {stat.label}
-                      </div>
+                      <div className="text-sm text-gray-600">{stat.label}</div>
                     </div>
                   );
                 })}
@@ -519,7 +621,8 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
                   Sistema de Gestión Completo
                 </h3>
                 <p className="text-gray-500 mb-6">
-                  Navega por las secciones del menú lateral para acceder a todas las funcionalidades
+                  Navega por las secciones del menú lateral para acceder a todas
+                  las funcionalidades
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>✅ Gestión de productos</div>
@@ -532,6 +635,18 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
           )}
         </div>
       </div>
+
+      {/* AI Assistant Chat */}
+      <AIAssistantChatEnhanced
+        // <AIAssistantChatEnhanced
+        isOpen={isChatOpen}
+        onClose={() => {
+          setIsChatOpen(false);
+          setIsChatMinimized(false);
+        }}
+        onToggleMinimize={() => setIsChatMinimized(!isChatMinimized)}
+        isMinimized={isChatMinimized}
+      />
     </div>
   );
 };

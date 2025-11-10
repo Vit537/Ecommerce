@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, AllowAny
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum
@@ -20,6 +20,10 @@ from .serializers import (
 class ProductViewSet(viewsets.ModelViewSet):
     """
     Product endpoint with server-side filtering, searching and ordering.
+    
+    Permissions:
+      - GET (list, retrieve): Public access - anyone can view products
+      - POST, PUT, PATCH, DELETE: Requires authentication (admin/staff only)
 
     Supported query params:
       - search: full text search on name, description, sku, brand name, category name
@@ -31,7 +35,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     """
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]  # Permite lectura pública
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category', 'brand', 'status']
     search_fields = ['name', 'description', 'sku', 'brand__name', 'category__name']
@@ -66,25 +70,37 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
+    """
+    Category endpoint - Public read access for customers to browse categories
+    """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]  # Permite lectura pública
 
 
 class BrandViewSet(viewsets.ModelViewSet):
+    """
+    Brand endpoint - Public read access for customers to filter by brand
+    """
     queryset = Brand.objects.all()
     serializer_class = BrandSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]  # Permite lectura pública
 
 
 class ProductVariantViewSet(viewsets.ModelViewSet):
+    """
+    Product Variant endpoint - Public read access for customers to see available variants
+    """
     queryset = ProductVariant.objects.all()
     serializer_class = ProductVariantSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]  # Permite lectura pública
 
 
 class SupplierViewSet(viewsets.ModelViewSet):
+    """
+    Supplier endpoint - Requires authentication (admin/staff only)
+    """
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]  # Solo admin/staff
  

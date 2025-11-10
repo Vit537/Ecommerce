@@ -66,6 +66,9 @@ class ColorSerializer(serializers.ModelSerializer):
 class ProductVariantSerializer(serializers.ModelSerializer):
     size = SizeSerializer(read_only=True)
     color = ColorSerializer(read_only=True)
+    available_stock = serializers.ReadOnlyField()
+    final_price = serializers.ReadOnlyField()
+    needs_restock = serializers.ReadOnlyField()
     
     class Meta:
         model = ProductVariant

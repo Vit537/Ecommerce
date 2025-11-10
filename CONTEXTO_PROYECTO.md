@@ -97,10 +97,12 @@ text-3xl: 1.875rem  (30px)  /* Títulos grandes */
    - Dorado accent SOLO para elementos premium o destacados
 
 3. **FORMAS Y ESPACIADOS**
-   - Bordes rectangulares o ligeramente redondeados (`rounded-lg` máximo)
-   - Padding compacto pero respirable (`p-4`, `p-6`, `p-8`)
-   - Gaps consistentes (`gap-4`, `gap-6`)
-   - Margins mínimos, preferir gaps
+  - Usa una jerarquía de esquinas (border-radius) coherente: `rounded-sm`/`rounded` para inputs y botones pequeños, `rounded-md`/`rounded-lg` para cards y contenedores, y `rounded-xl` para héroes, promos o tarjetas destacadas.
+  - `rounded-full` sigue reservado principalmente para avatares, badges circulares o chips muy específicos; se permite su uso en botones tipo "pill" (ej. tags o filtros) cuando tenga sentido visual.
+  - Padding compacto pero respirable (`p-4`, `p-6`, `p-8`) — mantén proporciones entre elementos.
+  - Gaps consistentes (`gap-4`, `gap-6`) y márgenes preferidos cuando se necesita separación externa; priorizar `gap` para layouts internos.
+  - Agrega elevación sutil para jerarquizar (ej. `shadow-sm`, `shadow-md`) y evitar interfaces demasiado planas.
+  - Usa rasgos de motion ligeros: transformaciones al hover (ej. `hover:-translate-y-0.5` o `hover:-translate-y-1`) y transiciones cortas para color, sombra y transform (`transition-transform transition-shadow duration-150 ease-in-out`).
 
 4. **TIPOGRAFÍA**
    - Títulos en uppercase con `tracking-wider` para énfasis
@@ -109,10 +111,11 @@ text-3xl: 1.875rem  (30px)  /* Títulos grandes */
    - Jerarquía visual clara (h1 > h2 > h3 > body)
 
 5. **INTERACCIONES**
-   - Hover: `bg-black` o `border-black`
-   - Focus: `border-black` con `ring-0` (sin outline azul)
-   - Active/Selected: `bg-black text-white`
-   - Disabled: `opacity-50 cursor-not-allowed`
+  - Hover: cambios sutiles y coherentes — color, sombra o leve desplazamiento. Evita cambios bruscos. Ej.: `hover:shadow-lg hover:-translate-y-1` o `hover:border-black`.
+  - Focus: `border-black` con `ring-0` (sin outline azul) o usar `focus-visible:ring` accesible cuando corresponda. Mantener contraste adecuado.
+  - Active/Selected: `bg-black text-white` u otros estados claros pero consistentes con la paleta.
+  - Disabled: `opacity-50 cursor-not-allowed` y evitar interacciones por teclado.
+  - Transiciones: siempre usar utilidades de transición para propiedades animadas (`transition-colors`, `transition-shadow`, `transition-transform`) y mantener duración entre `duration-100` y `duration-300` para sensación rápida y responsiva.
 
 ---
 
@@ -650,6 +653,69 @@ export default NewFeaturePage;
 </div>
 ```
 
+### Estilos recomendados — Cards, ProductCard y Modals (ejemplos Tailwind + MUI)
+
+Usar variantes coherentes de `border-radius`, sombras y transiciones mejora la percepción de calidad. A continuación hay ejemplos recomendados que reflejan las imágenes de referencia (hover suave, elevación, esquinas redondeadas moderadas):
+
+Tailwind — Card con hover y sombra
+
+```tsx
+<div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-lg transform hover:-translate-y-1 transition-transform transition-shadow duration-200">
+  <div className="text-xs text-gray-500 uppercase mb-2">Deportivo</div>
+  <img src="/path/to/img.jpg" alt="producto" className="w-full h-48 object-cover rounded-md mb-4" />
+  <h3 className="text-lg font-semibold">Nombre del producto</h3>
+  <p className="text-sm text-gray-600">Descripción corta</p>
+  <div className="mt-4 flex items-center justify-between">
+    <span className="text-lg font-bold">$79.99</span>
+    <button className="px-4 py-2 bg-black text-white rounded-full text-sm hover:bg-gray-900 transition-colors">AGREGAR</button>
+  </div>
+</div>
+```
+
+Tailwind — Modal con esquinas grandes y transición
+
+```tsx
+<div className="fixed inset-0 z-50 flex items-center justify-center">
+  <div className="absolute inset-0 bg-black bg-opacity-40 transition-opacity" />
+  <div className="relative bg-white rounded-2xl w-full max-w-2xl mx-4 p-6 transform transition-transform duration-200 scale-100 md:scale-100">
+    {/* Contenido del modal */}
+  </div>
+</div>
+```
+
+MUI theme (ejemplo de override) — shape y transitions
+
+```ts
+// frontend/src/theme/sportswearTheme.ts (fragmento)
+import { createTheme } from '@mui/material/styles';
+
+export const sportswearTheme = createTheme({
+  shape: {
+    borderRadius: 12, // 12px ~ rounded-lg/rounded-xl según contexto
+  },
+  components: {
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          transition: 'transform 200ms ease, box-shadow 200ms ease',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 10px 20px rgba(0,0,0,0.08)'
+          }
+        }
+      }
+    }
+  }
+});
+```
+
+Guía rápida de cuándo usar cada radio:
+- Inputs / micro-interacciones: `rounded` / `rounded-md`
+- Cards / modals / panels: `rounded-lg` / `rounded-xl` (consistencia entre cards de la misma lista)
+- Avatares / badges circulares: `rounded-full`
+
+Consejo: define tokens en `tailwind.config.js` y en `sportswearTheme` para que los radios y sombras sean consistentes entre Tailwind y MUI.
+
 #### Tabla
 
 ```tsx
@@ -719,9 +785,10 @@ export default NewFeaturePage;
    - Nada de azules, verdes, morados personalizados
    - Solo negro, blanco, gris y los funcionales (success, error, warning)
 
-2. ❌ **NO uses bordes redondeados excesivos**
-   - Máximo `rounded-lg` (0.5rem)
-   - Nunca `rounded-full` excepto para avatares/badges circulares
+2. ❌ **NO abuses de incoherencia en los radios de esquina**
+  - No mezcles estilos de border-radius muy distintos entre componentes del mismo contexto (ej. cards con `rounded-xl` y botones planos con `rounded-none` en el mismo grid) — mantener coherencia visual.
+  - Está permitido usar `rounded-xl` para tarjetas destacadas, promos y héroes cuando aporte claridad visual; `rounded-full` sigue reservado principalmente para avatares, badges circulares y chips, aunque su uso en botones "pill" es aceptable cuando sea coherente.
+  - Evita bordes 100% circulares (badges grandes) en elementos que contienen textos largos: puede afectar la legibilidad y el layout.
 
 3. ❌ **NO ignores la autenticación**
    - Siempre verifica el token antes de hacer requests

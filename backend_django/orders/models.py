@@ -38,6 +38,33 @@ class PaymentMethod(models.Model):
         return self.name
 
 
+class ShippingMethod(models.Model):
+    """
+    Métodos de envío disponibles
+    """
+    SHIPPING_TYPES = [
+        ('home_delivery', 'Envío a Domicilio'),
+        ('store_pickup', 'Retiro en Tienda'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    shipping_type = models.CharField(max_length=20, choices=SHIPPING_TYPES)
+    description = models.TextField(blank=True, null=True)
+    cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    estimated_days = models.IntegerField(default=0)  # 0 para retiro en tienda
+    is_active = models.BooleanField(default=True)
+    store_address = models.JSONField(default=dict, blank=True)  # Dirección de tienda para retiro
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['shipping_type', 'cost']
+    
+    def __str__(self):
+        return f"{self.name} - ${self.cost}"
+
+
 class Order(models.Model):
     """
     Órdenes de compra (ventas)
@@ -72,6 +99,7 @@ class Order(models.Model):
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
     # Información de envío
+    shipping_method = models.ForeignKey(ShippingMethod, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
     shipping_address = models.JSONField(default=dict, blank=True)
     billing_address = models.JSONField(default=dict, blank=True)
     

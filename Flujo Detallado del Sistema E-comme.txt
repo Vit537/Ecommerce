@@ -1,0 +1,354 @@
+Flujo Detallado del Sistema E-commerce - Tienda de Ropa
+1. FLUJO DEL CLIENTE - COMPRA ONLINE
+Navegación Inicial (Sin Login)
+El cliente entra a la página web y ve el navbar con las categorías principales (Hombres, Mujeres, Niños, Accesorios, etc.). Puede navegar libremente por todas las categorías sin necesidad de estar registrado.
+Búsqueda y Exploración
+El cliente utiliza el buscador en la parte superior para encontrar productos específicos. Puede buscar por nombre, categoría, tipo de prenda (camisas, pantalones, vestidos). Los resultados se muestran en forma de tarjetas con imagen principal, nombre del producto, precio y un botón de "Agregar al carrito".
+Visualización de Productos
+Cuando el cliente hace clic en una tarjeta de producto, se abre una vista detallada que muestra:
+•	Galería de imágenes del producto desde diferentes ángulos
+•	Nombre y descripción completa del producto
+•	Precio actual (si hay descuento, mostrar precio anterior tachado)
+•	Selector de talla (S, M, L, XL, etc.) con indicador de disponibilidad
+•	Selector de color (con muestras visuales de los colores disponibles)
+•	Cantidad disponible en stock
+•	Botón "Agregar al carrito"
+•	Información adicional (material, cuidados, tabla de medidas)
+Agregar al Carrito
+El cliente selecciona la talla y color deseados, indica la cantidad que quiere comprar y presiona "Agregar al carrito". El sistema valida que hay stock disponible de esa combinación específica (talla + color). Si hay stock, el producto se agrega al carrito y aparece una notificación confirmando la acción. El ícono del carrito en el navbar muestra un contador con el número de productos agregados.
+Revisión del Carrito
+El cliente puede hacer clic en el ícono del carrito para ver un resumen rápido de sus productos o ir a la vista completa del carrito. En la vista del carrito puede:
+•	Ver todos los productos agregados con sus detalles (nombre, talla, color, cantidad, precio unitario)
+•	Modificar la cantidad de cada producto
+•	Eliminar productos que ya no desea
+•	Ver el subtotal de cada producto
+•	Ver el total general de la compra
+•	Aplicar códigos de descuento si los tiene
+•	Botón "Continuar comprando" o "Proceder al pago"
+Inicio del Proceso de Compra
+Cuando el cliente presiona "Proceder al pago", el sistema verifica si está logueado. Si NO está logueado, lo redirige a una pantalla que ofrece dos opciones:
+•	Iniciar sesión si ya tiene cuenta
+•	Crear una cuenta nueva
+•	(Opcional) Continuar como invitado con solo email
+Registro/Login
+Si elige registrarse: El sistema solicita datos básicos (nombre completo, email, contraseña, número de teléfono). Al registrarse exitosamente, queda automáticamente logueado y continúa con el proceso de compra.
+Si elige iniciar sesión: Ingresa su email y contraseña. El sistema valida las credenciales y si son correctas, lo redirige al proceso de compra.
+Confirmación del Pedido
+Una vez logueado, el cliente ve un resumen detallado de su pedido con todos los productos, cantidades y precios. Aquí debe seleccionar el método de entrega:
+Opción 1: Compra Online (Envío a domicilio)
+•	El cliente debe ingresar o seleccionar la dirección de envío
+•	El sistema calcula automáticamente el costo de envío según la dirección
+•	Muestra tiempo estimado de entrega
+•	El total se actualiza incluyendo el costo de envío
+Opción 2: Retiro en Tienda Física
+•	El cliente selecciona la sucursal donde desea retirar
+•	El sistema muestra la dirección y horarios de la tienda
+•	No hay costo de envío
+•	Debe presentar su documento de identidad al retirar
+Selección de Método de Pago
+Para Compra Online:
+•	Tarjeta de crédito/débito (ingresa datos de la tarjeta)
+•	Transferencia bancaria (el sistema genera los datos de cuenta)
+•	Código QR (genera un QR para pagar desde app bancaria)
+•	PayPal u otros servicios de pago digital
+Para Retiro en Tienda:
+•	Pago online anticipado (cualquiera de los métodos anteriores)
+•	Pago al retirar en tienda (el pedido queda reservado 48 horas)
+Procesamiento del Pago
+El cliente confirma todos los datos y presiona "Finalizar compra". El sistema:
+•	Verifica nuevamente la disponibilidad del stock
+•	Procesa el pago con la pasarela de pago correspondiente
+•	Descuenta automáticamente del inventario los productos comprados
+•	Genera un número de pedido único
+•	Genera la factura electrónica con todos los detalles
+Confirmación y Factura
+Si el pago es exitoso, el cliente ve una pantalla de confirmación que muestra:
+•	Número de pedido
+•	Resumen de la compra
+•	Método de pago utilizado
+•	Dirección de envío o tienda de retiro
+•	Tiempo estimado de entrega
+•	Botón para descargar la factura en PDF
+•	El sistema envía un email con la misma información y la factura adjunta
+Seguimiento del Pedido
+El cliente puede ir a su perfil en "Mis Pedidos" para ver el estado actual:
+•	Pedido confirmado
+•	En preparación
+•	Enviado (con número de tracking si aplica)
+•	En camino
+•	Entregado
+________________________________________
+2. FLUJO DEL CAJERO - VENTA EN TIENDA FÍSICA
+Inicio de Sesión
+El cajero inicia su turno ingresando sus credenciales en el sistema de punto de venta (POS). El sistema registra el inicio de sesión y la hora de inicio del turno.
+Atención al Cliente
+Cuando un cliente llega a la caja con productos, el cajero inicia una nueva venta en el sistema. Esto abre una interfaz de carrito de compra vacía.
+Registro de Productos
+El cajero tiene dos formas de agregar productos:
+Opción 1: Escaneo de código de barras
+•	Escanea el código de barras de cada prenda
+•	El sistema automáticamente identifica el producto, talla, color y precio
+•	El producto aparece en el carrito de la venta actual
+Opción 2: Búsqueda manual
+•	Busca el producto por código o nombre en el sistema
+•	Selecciona la talla y color correspondiente
+•	Agrega al carrito de venta
+Verificación del Carrito
+El cajero verifica que todos los productos estén correctamente registrados. En la pantalla puede ver:
+•	Lista de productos con sus detalles
+•	Precio de cada producto
+•	Subtotal parcial
+•	Puede modificar cantidades o eliminar productos si el cliente cambia de opinión
+Aplicación de Descuentos o Promociones
+Si hay promociones activas o el cliente tiene algún cupón de descuento, el cajero lo aplica en este momento. El sistema valida el descuento y actualiza el total.
+Cálculo del Total
+El sistema calcula automáticamente el total final incluyendo cualquier descuento aplicado. Muestra claramente el total que el cliente debe pagar.
+Selección del Método de Pago
+El cajero pregunta al cliente cómo desea pagar y selecciona el método en el sistema:
+Efectivo:
+•	Ingresa el monto con el que paga el cliente
+•	El sistema calcula automáticamente el cambio que debe entregar
+•	Muestra el cambio en pantalla
+Tarjeta de crédito/débito:
+•	Procesa la tarjeta en el terminal POS
+•	Espera la confirmación del banco
+•	El sistema registra la transacción como pagada con tarjeta
+Código QR:
+•	El sistema genera un QR de pago
+•	El cliente escanea con su app bancaria y paga
+•	El sistema espera la confirmación del pago
+Combinación de métodos:
+•	El cliente puede pagar parte en efectivo y parte con tarjeta
+•	El cajero registra ambos montos
+Generación de Factura
+Una vez confirmado el pago exitoso, el sistema automáticamente:
+•	Genera un número de factura único
+•	Crea la factura con todos los detalles de la venta
+•	Descuenta del inventario los productos vendidos
+•	Registra la venta en el sistema con la fecha, hora, cajero, método de pago y canal (tienda física)
+Impresión y Entrega
+El sistema imprime la factura en el punto de venta. La factura contiene:
+•	Número de factura
+•	Fecha y hora de la compra
+•	Nombre de la tienda y datos fiscales
+•	Lista de productos comprados con precios
+•	Subtotal, descuentos, total
+•	Método de pago utilizado
+•	Nombre del cajero que atendió
+El cajero entrega la factura física al cliente junto con los productos. La venta queda registrada completamente en el sistema.
+Retiro de Pedidos Online
+Cuando un cliente llega a retirar un pedido hecho por internet:
+•	El cajero busca el número de pedido en el sistema
+•	Verifica la identidad del cliente (documento)
+•	Si el pago ya fue realizado online, solo entrega los productos
+•	Si eligió pagar al retirar, procesa el pago como una venta normal
+•	Marca el pedido como "Entregado" en el sistema
+•	Imprime el comprobante de retiro
+Cierre de Turno
+Al finalizar su turno, el cajero hace el cierre de caja:
+•	El sistema muestra todas las ventas realizadas en ese turno
+•	Calcula el total de efectivo que debería haber en caja
+•	Calcula el total de ventas con tarjeta
+•	Calcula el total de ventas con QR
+•	El cajero cuenta el efectivo físico y confirma que coincide
+•	El sistema genera un reporte de cierre de turno
+________________________________________
+3. FLUJO DEL ADMINISTRADOR - GESTIÓN Y ANÁLISIS
+Acceso al Panel de Administración
+El administrador ingresa con sus credenciales de alto nivel al dashboard administrativo. Tiene acceso completo a todas las funcionalidades del sistema.
+Dashboard Principal
+Al entrar, el administrador ve un panel con las métricas más importantes en tiempo real:
+•	Ventas del día (total en dinero)
+•	Número de transacciones realizadas
+•	Productos más vendidos del día
+•	Inventario con alertas de stock bajo
+•	Gráficos de ventas comparativas (hoy vs ayer, esta semana vs semana pasada)
+•	Indicadores clave de rendimiento (KPIs)
+Gestión de Inventario
+Vista General del Inventario: El administrador puede ver una lista completa de todos los productos en el sistema con:
+•	Nombre del producto
+•	Categoría
+•	Precio
+•	Stock disponible por talla y color
+•	Alertas visuales para productos con stock bajo (por ejemplo, menos de 10 unidades)
+•	Estado (activo, inactivo, agotado)
+Agregar Nuevos Productos:
+•	Ingresa toda la información del producto (nombre, descripción, categoría)
+•	Sube las imágenes del producto
+•	Define las tallas disponibles
+•	Define los colores disponibles
+•	Establece el precio
+•	Ingresa la cantidad inicial en stock para cada combinación talla-color
+•	Activa el producto para que sea visible en la tienda
+Actualizar Inventario:
+•	Cuando llega nueva mercadería, el administrador busca el producto
+•	Selecciona la talla y color específicos
+•	Aumenta la cantidad en stock
+•	El sistema registra la fecha y hora de la actualización
+•	El producto vuelve a estar disponible automáticamente en la web y POS
+Modificar Productos Existentes:
+•	Puede cambiar precios (el sistema puede guardar historial de precios)
+•	Actualizar descripciones o imágenes
+•	Agregar nuevas tallas o colores
+•	Desactivar productos descontinuados (dejan de mostrarse pero mantienen el historial)
+Análisis de Ventas
+Ventas por Canal: El administrador puede ver reportes separados de:
+•	Ventas online (con envío a domicilio)
+•	Ventas online (con retiro en tienda)
+•	Ventas en tienda física directas
+Cada reporte muestra:
+•	Cantidad de transacciones
+•	Monto total vendido
+•	Ticket promedio por transacción
+•	Productos más vendidos por canal
+•	Gráficos de tendencia
+Ventas por Método de Pago: Puede analizar qué métodos de pago prefieren los clientes:
+•	Total vendido con efectivo
+•	Total vendido con tarjeta de crédito
+•	Total vendido con tarjeta de débito
+•	Total vendido con código QR
+•	Total vendido con otros métodos digitales
+•	Porcentaje de uso de cada método
+•	Esto ayuda a decidir qué métodos promover o mantener
+Ventas por Período:
+•	Vista diaria: ventas de hoy comparadas con ayer
+•	Vista semanal: rendimiento de cada día de la semana
+•	Vista mensual: evolución durante el mes
+•	Vista anual: comparación entre meses
+•	Puede seleccionar rangos de fechas personalizados
+•	Exportar reportes en Excel o PDF
+Productos Más Vendidos:
+•	Ranking de productos por cantidad vendida
+•	Ranking de productos por ingresos generados
+•	Análisis de qué tallas se venden más
+•	Análisis de qué colores son más populares
+•	Productos con bajo movimiento (ayuda a decidir rebajas o descontinuarlos)
+Gestión de Facturas
+Registro de Facturas: El administrador puede ver todas las facturas generadas en el sistema:
+•	Número de factura
+•	Fecha y hora de emisión
+•	Cliente que la recibió
+•	Monto total
+•	Estado (pagada, pendiente, anulada)
+•	Canal de venta (online o tienda)
+•	Método de pago utilizado
+Búsqueda de Facturas: Puede buscar facturas específicas por:
+•	Número de factura
+•	Nombre del cliente
+•	Rango de fechas
+•	Monto
+•	Estado
+Anulación de Facturas: Si hay un error o devolución:
+•	El administrador busca la factura
+•	Registra el motivo de la anulación
+•	El sistema crea una nota de crédito
+•	Revierte el movimiento de inventario (devuelve los productos al stock)
+•	Registra la transacción de devolución
+Gestión de Clientes
+Base de Datos de Clientes:
+•	Puede ver todos los clientes registrados
+•	Información de contacto
+•	Historial de compras de cada cliente
+•	Monto total gastado por cliente
+•	Clientes más frecuentes
+•	Clientes inactivos (no han comprado en mucho tiempo)
+Análisis de Comportamiento:
+•	Qué productos prefiere cada segmento de clientes
+•	Frecuencia de compra promedio
+•	Ticket promedio por cliente
+•	Tasa de retorno (clientes que regresan a comprar)
+Gestión de Usuarios del Sistema
+Cajeros:
+•	Crear nuevas cuentas de cajero
+•	Asignar permisos específicos
+•	Ver reportes de ventas por cajero
+•	Activar o desactivar cuentas
+•	Resetear contraseñas
+Administradores:
+•	Gestionar otros usuarios administradores
+•	Asignar diferentes niveles de permisos
+•	Auditoría de acciones realizadas por cada admin
+Configuración del Sistema
+Parámetros Generales:
+•	Configurar métodos de pago disponibles
+•	Definir zonas de envío y costos
+•	Establecer horarios de atención
+•	Configurar direcciones de tiendas físicas
+•	Definir políticas de devolución
+•	Configurar emails automáticos
+Promociones y Descuentos:
+•	Crear códigos de descuento
+•	Definir porcentajes o montos fijos de descuento
+•	Establecer fechas de vigencia
+•	Limitar usos por cliente
+•	Crear promociones por temporada (Black Friday, Navidad, etc.)
+•	Ofertas especiales por cantidad (2x1, 3x2)
+Gestión de Categorías:
+•	Crear nuevas categorías de productos
+•	Organizar jerarquías de categorías
+•	Definir qué categorías aparecen en el navbar
+•	Activar o desactivar categorías temporalmente
+Reportes Financieros
+Balance General:
+•	Ingresos totales del período seleccionado
+•	Desglose por canal de venta
+•	Desglose por método de pago
+•	Comparación con períodos anteriores
+•	Proyecciones basadas en tendencias
+Análisis de Rentabilidad:
+•	Productos con mayor margen de ganancia
+•	Productos con menor margen
+•	Costos operativos vs ingresos
+•	ROI de inversiones en inventario
+Exportación de Datos:
+•	Exportar reportes contables para sistemas externos
+•	Generar archivos para declaraciones fiscales
+•	Integración con sistemas de contabilidad
+Alertas y Notificaciones
+El sistema envía alertas automáticas al administrador cuando:
+•	Un producto está por agotarse (stock crítico)
+•	Se realiza una venta de monto inusualmente alto (para verificar)
+•	Hay un pedido pendiente de procesamiento por más de 24 horas
+•	Se genera una devolución o anulación de factura
+•	Hay discrepancias en cierres de caja
+•	El sistema detecta actividad sospechosa
+________________________________________
+4. FLUJOS ESPECIALES Y CASOS DE USO ADICIONALES
+Devoluciones y Cambios
+Cliente solicita devolución (compra online):
+•	El cliente entra a su perfil y va a "Mis Pedidos"
+•	Selecciona el pedido que desea devolver
+•	Indica el motivo de la devolución
+•	El sistema genera una solicitud de devolución
+•	El administrador la revisa y aprueba/rechaza
+•	Si se aprueba, se genera una guía de retorno
+•	El cliente envía el producto de vuelta
+•	Al recibir el producto, se procesa el reembolso
+•	El inventario se actualiza
+Cliente solicita cambio (en tienda física):
+•	El cliente llega con su factura y el producto
+•	El cajero verifica que el producto esté en condiciones adecuadas
+•	Busca un producto de reemplazo en el sistema
+•	Si hay diferencia de precio, procesa el pago adicional o reembolso
+•	Genera una nueva factura o nota de crédito
+•	Actualiza el inventario automáticamente
+Gestión de Pedidos Pendientes
+Pedidos con pago pendiente (online):
+•	El sistema mantiene el pedido reservado por 48 horas
+•	Envía recordatorios por email al cliente
+•	Si no se completa el pago, cancela automáticamente el pedido
+•	Libera el stock reservado de vuelta al inventario
+Pedidos en preparación:
+•	El administrador o personal de bodega ve una lista de pedidos por preparar
+•	Marca cada producto como "empaquetado"
+•	Cuando todos los productos están listos, cambia el estado a "Listo para envío"
+•	Si es retiro en tienda, notifica al cliente que puede recoger
+Sincronización en Tiempo Real
+Actualización de inventario:
+•	Cuando se vende un producto (online o tienda), el stock se reduce inmediatamente
+•	Si un producto se agota mientras un cliente lo tiene en su carrito online, se le notifica al intentar pagar
+•	Todos los puntos de venta ven el mismo inventario actualizado
+Precios y promociones:
+•	Cuando el administrador cambia un precio, se refleja instantáneamente en la web y POS
+•	Las promociones se activan y desactivan automáticamente según las fechas configuradas
+________________________________________

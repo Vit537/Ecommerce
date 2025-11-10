@@ -57,10 +57,13 @@ export interface ProductVariant {
   stock_quantity: number;
   min_stock_level: number;
   reserved_quantity: number;
+  available_stock: number;
   price_adjustment: string;
+  final_price: number;
   images: string[];
   barcode?: string;
   is_active: boolean;
+  needs_restock: boolean;
   created_at: string;
   updated_at: string;
   product: string;

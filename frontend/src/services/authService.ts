@@ -18,6 +18,8 @@ export interface RegisterRequest {
   first_name: string;
   last_name: string;
   phone?: string;
+  address?: string;
+  user_type?: string; // 'customer', 'employee', etc.
 }
 
 export interface User {
@@ -85,7 +87,8 @@ class AuthService {
   }
 
   async updateProfile(data: Partial<User>): Promise<User> {
-    const response = await apiService.patch('/auth/user/profile/', data);
+    const response = await apiService.patch('/auth/update_profile/', data);
+    // const response = await apiService.patch('/auth/user/profile/', data);
     const updatedUser = response.data;
     this.setUser(updatedUser);
     return updatedUser;

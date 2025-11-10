@@ -123,6 +123,50 @@ export const API_ENDPOINTS = {
     CUSTOMER: '/dashboard/customer/',
     STATS: '/dashboard/stats/',
   },
+
+  // Asistente IA
+  ASSISTANT: {
+    CHAT: '/assistant/chat/',
+    CONVERSATIONS: '/assistant/conversations/',
+    CONVERSATION_DETAIL: (id: string) => `/assistant/conversations/${id}/`,
+    DELETE_CONVERSATION: (id: string) => `/assistant/conversations/${id}/delete/`,
+    FEEDBACK: '/assistant/feedback/',
+    QUICK_ACTIONS: '/assistant/quick-actions/',
+    SUGGESTIONS: '/assistant/suggestions/',
+  },
+
+  // Machine Learning
+  ML: {
+    // Models
+    MODELS: '/ml/models/',
+    MODEL_DETAIL: (id: string) => `/ml/models/${id}/`,
+    
+    // Predictions
+    PREDICTIONS: '/ml/predictions/',
+    TRAINING_LOGS: '/ml/training-logs/',
+    
+    // Sales Forecast
+    TRAIN_SALES_FORECAST: '/ml/train-sales-forecast/',
+    PREDICT_SALES: '/ml/predict-sales/',
+    
+    // Product Recommendations
+    TRAIN_PRODUCT_RECOMMENDATION: '/ml/train-product-recommendation/',
+    PRODUCT_RECOMMENDATIONS: (productId: string) => `/ml/product-recommendations/${productId}/`,
+    
+    // Customer Segmentation
+    TRAIN_CUSTOMER_SEGMENTATION: '/ml/train-customer-segmentation/',
+    CUSTOMER_SEGMENT: (customerId: string) => `/ml/customer-segment/${customerId}/`,
+    
+    // Inventory Optimization
+    INVENTORY_ANALYSIS: '/ml/inventory-analysis/',
+    REORDER_RECOMMENDATIONS: '/ml/reorder-recommendations/',
+    INVENTORY_HEALTH: '/ml/inventory-health/',
+    INVENTORY_ALERTS: '/ml/inventory-alerts/',
+    RESOLVE_ALERT: (alertId: string) => `/ml/inventory-alerts/${alertId}/resolve/`,
+    
+    // Dashboard
+    DASHBOARD_SUMMARY: '/ml/dashboard-summary/',
+  },
 };
 
 // Obtener la URL completa de un endpoint

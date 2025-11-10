@@ -24,13 +24,18 @@ class UserSerializer(serializers.ModelSerializer):
     """
     profile = UserProfileSerializer(read_only=True)
     full_name = serializers.CharField(source='get_full_name', read_only=True)
+    is_admin = serializers.BooleanField(read_only=True)
+    is_employee = serializers.BooleanField(read_only=True)
+    is_customer = serializers.BooleanField(read_only=True)
     
     class Meta:
         model = User
         fields = [
             'id', 'email', 'first_name', 'last_name', 'full_name',
-            'avatar', 'role', 'is_email_verified', 'created_at', 
-            'updated_at', 'is_active', 'profile'
+            'avatar', 'role', 'user_type', 'phone', 'address',
+            'is_email_verified', 'created_at', 'updated_at', 
+            'is_active', 'is_admin', 'is_employee', 'is_customer',
+            'profile'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'is_email_verified']
 
@@ -40,31 +45,64 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     Serializer for user registration
     """
     password = serializers.CharField(write_only=True, validators=[validate_password])
-    password_confirm = serializers.CharField(write_only=True)
+    password_confirm = serializers.CharField(write_only=True, required=False)
+    phone = serializers.CharField(max_length=15, required=False, allow_blank=True)
+    address = serializers.CharField(required=False, allow_blank=True)
+    user_type = serializers.ChoiceField(
+        choices=['admin', 'staff', 'customer'],
+        default='customer',
+        required=False
+    )
+    role = serializers.ChoiceField(
+        choices=['admin', 'employee', 'customer', 'manager'],
+        default='customer',
+        required=False
+    )
     
     class Meta:
         model = User
         fields = [
-            'email', 'first_name', 'last_name', 'password', 'password_confirm'
+            'email', 'first_name', 'last_name', 'password', 'password_confirm',
+            'phone', 'address', 'user_type', 'role'
         ]
     
     def validate(self, attrs):
         """
         Validate that passwords match
         """
-        if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError("Passwords don't match")
+        password_confirm = attrs.pop('password_confirm', None)
+        if password_confirm and attrs['password'] != password_confirm:
+            raise serializers.ValidationError({"password_confirm": "Passwords don't match"})
+        
+        # Si se especifica user_type, ajustar role automáticamente
+        user_type = attrs.get('user_type', 'customer')
+        if user_type == 'customer' and 'role' not in attrs:
+            attrs['role'] = 'customer'
+        elif user_type == 'staff' and 'role' not in attrs:
+            attrs['role'] = 'employee'
+        elif user_type == 'admin' and 'role' not in attrs:
+            attrs['role'] = 'admin'
+            
         return attrs
     
     def create(self, validated_data):
         """
         Create user and profile
         """
-        # Remove password_confirm from validated_data
-        validated_data.pop('password_confirm', None)
+        # Extraer campos opcionales
+        phone = validated_data.pop('phone', None)
+        address = validated_data.pop('address', None)
+        user_type = validated_data.pop('user_type', 'customer')
+        role = validated_data.pop('role', 'customer')
         
         # Create user
-        user = User.objects.create_user(**validated_data)
+        user = User.objects.create_user(
+            **validated_data,
+            phone=phone,
+            address=address,
+            user_type=user_type,
+            role=role
+        )
         
         # Create user profile
         UserProfile.objects.create(user=user)
