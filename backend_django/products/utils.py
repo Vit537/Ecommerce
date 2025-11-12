@@ -113,22 +113,45 @@ def save_product_image(image_file, product_name, index=0, use_cloud=None):
         logger.info(f"☁️ Usando Cloud Storage: {use_cloud}")
         
         if use_cloud:
-            # Usar Google Cloud Storage
+            # Usar Google Cloud Storage directamente
+            from google.cloud import storage
+            
             filepath = f"products/{filename}"
             logger.info(f"📤 Subiendo a GCS: {filepath}")
             
             try:
-                saved_path = default_storage.save(filepath, webp_content)
-                logger.info(f"✅ Guardado en GCS: {saved_path}")
+                # Obtener cliente y bucket
+                bucket_name = getattr(settings, 'GS_BUCKET_NAME', 'ecommerce-media-storage')
+                project_id = getattr(settings, 'GCP_PROJECT_ID', 'big-axiom-474503-m5')
+                
+                logger.info(f"🔧 Conectando a proyecto: {project_id}, bucket: {bucket_name}")
+                
+                # Crear cliente (usa credenciales automáticas de Cloud Run)
+                client = storage.Client(project=project_id)
+                bucket = client.bucket(bucket_name)
+                blob = bucket.blob(filepath)
+                
+                # Configurar metadata
+                blob.content_type = 'image/webp'
+                blob.cache_control = 'public, max-age=31536000'
+                
+                # Subir el archivo
+                webp_content.seek(0)
+                blob.upload_from_file(webp_content, content_type='image/webp')
+                
+                # Hacer el blob público
+                blob.make_public()
+                
+                logger.info(f"✅ Guardado en GCS: {filepath}")
+                
+                # Retornar URL pública
+                url = f"https://storage.googleapis.com/{bucket_name}/{filepath}"
+                logger.info(f"🔗 URL generada: {url}")
+                return url
+                
             except Exception as e:
                 logger.error(f"❌ Error al guardar en GCS: {str(e)}", exc_info=True)
                 raise
-            
-            # Retornar URL pública de GCS
-            bucket_name = getattr(settings, 'GS_BUCKET_NAME', 'ecommerce-media-storage')
-            url = f"https://storage.googleapis.com/{bucket_name}/{saved_path}"
-            logger.info(f"🔗 URL generada: {url}")
-            return url
         else:
             # Guardar localmente
             filepath = os.path.join('products', filename)
@@ -140,6 +163,7 @@ def save_product_image(image_file, product_name, index=0, use_cloud=None):
             
             # Guardar archivo
             with open(full_path, 'wb') as f:
+                webp_content.seek(0)
                 f.write(webp_content.read())
             
             # Retornar URL relativa

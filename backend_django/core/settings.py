@@ -168,17 +168,12 @@ if USE_CLOUD_STORAGE:
     GS_BUCKET_NAME = config('GS_BUCKET_NAME', default='ecommerce-media-storage')
     GS_PROJECT_ID = config('GCP_PROJECT_ID', default='big-axiom-474503-m5')
     
-    # Configurar credenciales desde variable de entorno o archivo
-    google_creds_path = config('GOOGLE_APPLICATION_CREDENTIALS', default='')
-    if google_creds_path and os.path.exists(google_creds_path):
-        GS_CREDENTIALS = google_creds_path
-    else:
-        # En Cloud Run, las credenciales se obtienen automáticamente del metadata server
-        GS_CREDENTIALS = None
+    # En Cloud Run, las credenciales se obtienen automáticamente del metadata server
+    # No necesitamos configurar GS_CREDENTIALS explícitamente
     
     GS_DEFAULT_ACL = 'publicRead'
     GS_FILE_OVERWRITE = False
-    GS_LOCATION = 'products'  # Subcarpeta dentro del bucket
+    GS_QUERYSTRING_AUTH = False  # No usar query string para autenticación
     MEDIA_URL = f'https://storage.googleapis.com/{GS_BUCKET_NAME}/'
 else:
     # Local file storage for development
