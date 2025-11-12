@@ -47,7 +47,6 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'django_filters',
-    'django_extensions',
     'storages',  # Para Google Cloud Storage
 ]
 
