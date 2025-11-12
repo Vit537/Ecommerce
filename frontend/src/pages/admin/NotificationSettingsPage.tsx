@@ -11,7 +11,10 @@ import {
   Loader,
   TestTube,
   Eye,
-  EyeOff
+  EyeOff,
+  Send,
+  FileText,
+  Users
 } from 'lucide-react';
 import {
   notificationService,
@@ -28,6 +31,21 @@ const NotificationSettingsPage: React.FC = () => {
     success: boolean;
     message: string;
   } | null>(null);
+
+  // Estados para Broadcast Email
+  const [showBroadcastModal, setShowBroadcastModal] = useState(false);
+  const [sendingBroadcast, setSendingBroadcast] = useState(false);
+  const [broadcastData, setBroadcastData] = useState({
+    recipients: '',
+    subject: '',
+    message: '',
+    is_html: false
+  });
+  const [broadcastResult, setBroadcastResult] = useState<any>(null);
+
+  // Estados para Daily Report
+  const [sendingReport, setSendingReport] = useState(false);
+  const [reportResult, setReportResult] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     resend_api_key: '',
@@ -121,6 +139,80 @@ const NotificationSettingsPage: React.FC = () => {
       });
     } finally {
       setTesting(false);
+    }
+  };
+
+  const handleSendBroadcast = async () => {
+    // Validaciones
+    if (!broadcastData.recipients.trim()) {
+      alert('Debes ingresar al menos un destinatario');
+      return;
+    }
+    if (!broadcastData.subject.trim()) {
+      alert('El asunto es obligatorio');
+      return;
+    }
+    if (!broadcastData.message.trim()) {
+      alert('El mensaje es obligatorio');
+      return;
+    }
+
+    setSendingBroadcast(true);
+    setBroadcastResult(null);
+
+    try {
+      // Convertir la lista de emails separados por comas en array
+      const recipientsList = broadcastData.recipients
+        .split(',')
+        .map(email => email.trim())
+        .filter(email => email.length > 0);
+
+      const result = await notificationService.sendBroadcastEmail({
+        recipients: recipientsList,
+        subject: broadcastData.subject,
+        message: broadcastData.message,
+        is_html: broadcastData.is_html
+      });
+
+      setBroadcastResult(result);
+      
+      // Limpiar formulario si fue exitoso
+      if (result.success) {
+        setBroadcastData({
+          recipients: '',
+          subject: '',
+          message: '',
+          is_html: false
+        });
+      }
+    } catch (error: any) {
+      setBroadcastResult({
+        success: false,
+        message: error.response?.data?.error || 'Error al enviar emails',
+        results: null
+      });
+    } finally {
+      setSendingBroadcast(false);
+    }
+  };
+
+  const handleSendDailyReport = async () => {
+    setSendingReport(true);
+    setReportResult(null);
+
+    try {
+      const result = await notificationService.sendDailyReport();
+      setReportResult({
+        success: true,
+        message: result.message || 'Reporte enviado exitosamente'
+      });
+    } catch (error: any) {
+      setReportResult({
+        success: false,
+        message: error.response?.data?.error || 'Error al enviar reporte'
+      });
+    } finally {
+      setSendingReport(false);
     }
   };
 
@@ -504,6 +596,227 @@ const NotificationSettingsPage: React.FC = () => {
                 </ul>
               </div>
             </div>
+          </div>
+
+          {/* Broadcast Email Card */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-black rounded-lg">
+                <Users className="text-white" size={20} />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Envío de Email Masivo
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Envía un email personalizado a múltiples destinatarios
+                </p>
+              </div>
+              <button
+                onClick={() => setShowBroadcastModal(!showBroadcastModal)}
+                className="px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-900 transition-colors flex items-center gap-2"
+              >
+                <Send size={16} />
+                ENVIAR EMAIL
+              </button>
+            </div>
+
+            {showBroadcastModal && (
+              <div className="space-y-4 pt-4 border-t border-gray-200">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Destinatarios (separados por comas) *
+                  </label>
+                  <textarea
+                    value={broadcastData.recipients}
+                    onChange={(e) =>
+                      setBroadcastData({ ...broadcastData, recipients: e.target.value })
+                    }
+                    placeholder="email1@example.com, email2@example.com"
+                    rows={3}
+                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-black transition-colors resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Asunto *
+                  </label>
+                  <input
+                    type="text"
+                    value={broadcastData.subject}
+                    onChange={(e) =>
+                      setBroadcastData({ ...broadcastData, subject: e.target.value })
+                    }
+                    placeholder="Asunto del email"
+                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-black transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Mensaje *
+                  </label>
+                  <textarea
+                    value={broadcastData.message}
+                    onChange={(e) =>
+                      setBroadcastData({ ...broadcastData, message: e.target.value })
+                    }
+                    placeholder="Escribe tu mensaje aquí..."
+                    rows={6}
+                    className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-black transition-colors resize-none"
+                  />
+                </div>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={broadcastData.is_html}
+                    onChange={(e) =>
+                      setBroadcastData({ ...broadcastData, is_html: e.target.checked })
+                    }
+                    className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+                  />
+                  <span className="text-sm text-gray-700">
+                    El mensaje contiene HTML personalizado
+                  </span>
+                </label>
+
+                <div className="flex items-center justify-end gap-3 pt-4">
+                  <button
+                    onClick={() => {
+                      setShowBroadcastModal(false);
+                      setBroadcastResult(null);
+                    }}
+                    className="px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    CANCELAR
+                  </button>
+                  <button
+                    onClick={handleSendBroadcast}
+                    disabled={sendingBroadcast}
+                    className="flex items-center gap-2 px-6 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {sendingBroadcast ? (
+                      <>
+                        <Loader className="animate-spin" size={16} />
+                        <span>ENVIANDO...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} />
+                        <span>ENVIAR AHORA</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {broadcastResult && (
+                  <div
+                    className={`p-4 rounded-lg border ${
+                      broadcastResult.success
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-red-50 border-red-200'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {broadcastResult.success ? (
+                        <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
+                      ) : (
+                        <XCircle className="text-red-600 flex-shrink-0" size={20} />
+                      )}
+                      <div className="flex-1">
+                        <p
+                          className={`text-sm font-semibold ${
+                            broadcastResult.success ? 'text-green-900' : 'text-red-900'
+                          }`}
+                        >
+                          {broadcastResult.message}
+                        </p>
+                        {broadcastResult.results && (
+                          <div className="text-sm mt-2">
+                            <p className="text-green-700">
+                              ✓ Exitosos: {broadcastResult.results.success?.length || 0}
+                            </p>
+                            <p className="text-red-700">
+                              ✗ Fallidos: {broadcastResult.results.failed?.length || 0}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Daily Report Card */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-black rounded-lg">
+                <FileText className="text-white" size={20} />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Reporte Diario de Ventas
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Enviar manualmente el reporte de ventas del día al administrador
+                </p>
+              </div>
+              <button
+                onClick={handleSendDailyReport}
+                disabled={sendingReport}
+                className="flex items-center gap-2 px-4 py-2 bg-black text-white text-sm font-semibold rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {sendingReport ? (
+                  <>
+                    <Loader className="animate-spin" size={16} />
+                    <span>ENVIANDO...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileText size={16} />
+                    <span>ENVIAR REPORTE</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {reportResult && (
+              <div
+                className={`mt-4 p-4 rounded-lg border ${
+                  reportResult.success
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-red-50 border-red-200'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  {reportResult.success ? (
+                    <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
+                  ) : (
+                    <XCircle className="text-red-600 flex-shrink-0" size={20} />
+                  )}
+                  <div className="flex-1">
+                    <p
+                      className={`text-sm font-semibold ${
+                        reportResult.success ? 'text-green-900' : 'text-red-900'
+                      }`}
+                    >
+                      {reportResult.success ? 'Reporte Enviado' : 'Error al Enviar'}
+                    </p>
+                    <p
+                      className={`text-sm mt-1 ${
+                        reportResult.success ? 'text-green-700' : 'text-red-700'
+                      }`}
+                    >
+                      {reportResult.message}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Save Button */}

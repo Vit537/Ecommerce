@@ -114,3 +114,31 @@ class SendTestEmailSerializer(serializers.Serializer):
     to_email = serializers.EmailField(required=True)
     subject = serializers.CharField(max_length=200, required=True)
     message = serializers.CharField(required=True)
+
+
+class BroadcastEmailSerializer(serializers.Serializer):
+    """Serializer para enviar emails promocionales personalizados"""
+    recipients = serializers.ListField(
+        child=serializers.EmailField(),
+        required=True,
+        help_text="Lista de emails a los que enviar el mensaje"
+    )
+    subject = serializers.CharField(
+        max_length=200, 
+        required=True,
+        help_text="Asunto del email"
+    )
+    message = serializers.CharField(
+        required=True,
+        help_text="Mensaje HTML o texto plano"
+    )
+    is_html = serializers.BooleanField(
+        default=True,
+        help_text="Si el mensaje es HTML (true) o texto plano (false)"
+    )
+    
+    def validate_recipients(self, value):
+        """Valida que haya al menos un destinatario"""
+        if not value or len(value) == 0:
+            raise serializers.ValidationError("Debe proporcionar al menos un destinatario")
+        return value

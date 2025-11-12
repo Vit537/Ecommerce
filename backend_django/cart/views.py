@@ -19,7 +19,20 @@ class CartViewSet(viewsets.ModelViewSet):
         """
         Obtener o crear el carrito del usuario
         """
-        cart, created = Cart.objects.get_or_create(user=request.user)
+        # Obtener el primer carrito o crearlo
+        cart = Cart.objects.filter(user=request.user).first()
+        if not cart:
+            cart = Cart.objects.create(user=request.user)
+        
+        # Limpiar carritos duplicados si existen
+        duplicate_carts = Cart.objects.filter(user=request.user).exclude(id=cart.id)
+        if duplicate_carts.exists():
+            # Mover items de carritos duplicados al carrito principal
+            for dup_cart in duplicate_carts:
+                dup_cart.items.all().update(cart=cart)
+            # Eliminar carritos duplicados
+            duplicate_carts.delete()
+        
         serializer = self.get_serializer(cart)
         return Response(serializer.data)
     
@@ -29,7 +42,17 @@ class CartViewSet(viewsets.ModelViewSet):
         Agregar un item al carrito
         Payload: { "product_variant": "uuid", "quantity": 1 }
         """
-        cart, created = Cart.objects.get_or_create(user=request.user)
+        # Obtener el primer carrito o crearlo
+        cart = Cart.objects.filter(user=request.user).first()
+        if not cart:
+            cart = Cart.objects.create(user=request.user)
+        
+        # Limpiar carritos duplicados si existen
+        duplicate_carts = Cart.objects.filter(user=request.user).exclude(id=cart.id)
+        if duplicate_carts.exists():
+            for dup_cart in duplicate_carts:
+                dup_cart.items.all().update(cart=cart)
+            duplicate_carts.delete()
         
         product_variant_id = request.data.get('product_variant')
         quantity = int(request.data.get('quantity', 1))

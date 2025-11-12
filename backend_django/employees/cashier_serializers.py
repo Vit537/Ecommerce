@@ -321,6 +321,17 @@ class CreateSaleSerializer(serializers.Serializer):
         shift.calculate_expected_cash()
         shift.save()
         
+        # Enviar email de confirmación si el cliente tiene email válido
+        try:
+            if customer and customer.email and customer.email != 'walkin@store.local':
+                from notifications.email_service import email_service
+                email_service.send_order_confirmation(order, customer)
+        except Exception as e:
+            # No fallar la venta si el email falla
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error enviando email de confirmación: {e}")
+        
         return order
 
 

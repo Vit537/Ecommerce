@@ -323,3 +323,7 @@ LOGGING = {
 
 # QR Code Payment Configuration
 QR_CODE_IMAGE_PATH = os.path.join(BASE_DIR, 'static', 'qr_codes', 'banco_qr.jpg')
+
+# Email Configuration - Resend
+RESEND_API_KEY = config('RESEND_API_KEY', default='')
+RESEND_FROM_EMAIL = config('RESEND_FROM_EMAIL', default='onboarding@resend.dev')

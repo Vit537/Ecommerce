@@ -96,6 +96,43 @@ class NotificationService {
     );
   }
 
+  /**
+   * Envía un email broadcast a múltiples destinatarios
+   */
+  async sendBroadcastEmail(data: {
+    recipients: string[];
+    subject: string;
+    message: string;
+    is_html?: boolean;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    results: {
+      success: Array<{ email: string; email_id: string }>;
+      failed: Array<{ email: string; error: string }>;
+      total: number;
+    };
+  }> {
+    return apiService.post(
+      `${this.baseUrl}/settings/broadcast_email/`,
+      data
+    );
+  }
+
+  /**
+   * Envía el reporte diario de ventas
+   */
+  async sendDailyReport(date?: string): Promise<{
+    success: boolean;
+    message: string;
+    report_data?: any;
+  }> {
+    return apiService.post(
+      `${this.baseUrl}/settings/send_daily_report/`,
+      date ? { date } : {}
+    );
+  }
+
   // ==================== NOTIFICATIONS ====================
 
   /**

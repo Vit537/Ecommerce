@@ -3,6 +3,7 @@ Servicio de email usando Resend
 """
 import resend
 from django.utils import timezone
+from django.conf import settings
 from .models import NotificationSettings, Notification
 import logging
 
@@ -14,8 +15,9 @@ class EmailService:
     
     def __init__(self):
         self.settings = self._get_settings()
-        if self.settings and self.settings.resend_api_key:
-            resend.api_key = self.settings.resend_api_key
+        # Usar la API key desde las variables de entorno
+        if settings.RESEND_API_KEY:
+            resend.api_key = settings.RESEND_API_KEY
     
     def _get_settings(self):
         """Obtiene la configuración de notificaciones"""
@@ -41,8 +43,8 @@ class EmailService:
         Returns:
             dict: Respuesta de Resend con el ID del email
         """
-        if not self.settings or not self.settings.resend_api_key:
-            logger.error("Resend API key no configurada")
+        if not settings.RESEND_API_KEY:
+            logger.error("Resend API key no configurada en variables de entorno")
             self._create_notification(
                 user=user,
                 event_type=event_type,
@@ -50,15 +52,19 @@ class EmailService:
                 message="Email no enviado: API key no configurada",
                 to_email=to_email,
                 status='failed',
-                error="API key no configurada",
+                error="API key no configurada en .env",
                 metadata=metadata
             )
-            raise ValueError("Resend API key no configurada")
+            raise ValueError("Resend API key no configurada. Agrega RESEND_API_KEY a tu archivo .env")
         
         try:
             # Enviar email con Resend
+            # Usar from_email desde settings o desde la base de datos
+            from_email = settings.RESEND_FROM_EMAIL
+            from_name = self.settings.from_name if self.settings else 'SPORTSWEAR'
+            
             params = {
-                "from": f"{self.settings.from_name} <{self.settings.from_email}>",
+                "from": f"{from_name} <{from_email}>",
                 "to": [to_email],
                 "subject": subject,
                 "html": html_content,

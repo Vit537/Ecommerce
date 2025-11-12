@@ -298,7 +298,15 @@ def stripe_webhook(request):
                     invoice.status = 'paid'
                     invoice.save()
                 
-                # Aquí podrías enviar email al cliente
+                # Enviar email de confirmación de pago al cliente
+                try:
+                    from notifications.email_service import email_service
+                    email_service.send_payment_notification(payment, order.customer)
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Error enviando email de pago: {e}")
+                
                 print(f"✅ Pago completado para orden {order.order_number}")
                 
             except Payment.DoesNotExist:
@@ -481,7 +489,15 @@ def confirm_qr_payment(request):
             }
         )
         
-        # Aquí podrías enviar un email al cliente y al admin
+        # Enviar email de confirmación de pago al cliente
+        try:
+            from notifications.email_service import email_service
+            email_service.send_payment_notification(payment, order.customer)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error enviando email de pago QR: {e}")
+        
         print(f"📱 Cliente confirmó pago QR para orden {order.order_number}")
         
         return Response({
