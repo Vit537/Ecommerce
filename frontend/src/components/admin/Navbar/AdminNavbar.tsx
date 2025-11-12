@@ -201,9 +201,8 @@ const navigationConfig = [
     id: "assistant",
     label: "Asistente IA",
     icon: Sparkles,
-    // icon: MessageSquare,
     section: "tools",
-    // path: '/admin/assistant'
+    // No tiene path porque abre un modal/drawer, no navega
   },
   {
     id: "settings",
