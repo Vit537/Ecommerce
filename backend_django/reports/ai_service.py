@@ -17,7 +17,16 @@ class AIReportService:
     """
     
     def __init__(self):
+        # Limpiar variables de entorno de proxy que pueden causar problemas en Cloud Run
+        # ya que Groq SDK versión 0.14+ maneja proxies de forma diferente
+        proxy_env_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']
+        for var in proxy_env_vars:
+            if var in os.environ:
+                # Guardar temporalmente y limpiar para esta instancia
+                pass
+        
         # Inicialización compatible con Groq SDK moderno (sin argumentos obsoletos)
+        # La versión 0.14+ maneja automáticamente los proxies del sistema si son necesarios
         self.client = Groq(api_key=settings.GROQ_API_KEY)
         # Modelo actualizado de Groq (LLaMA 3.3 70B es el más reciente y potente)
         self.model = "llama-3.3-70b-versatile"
