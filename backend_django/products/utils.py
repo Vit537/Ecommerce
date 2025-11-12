@@ -101,20 +101,16 @@ def save_product_image(image_file, product_name, index=0, use_cloud=None):
         
         # Determinar si usar cloud storage
         if use_cloud is None:
-            use_cloud = not settings.DEBUG
+            use_cloud = getattr(settings, 'USE_CLOUD_STORAGE', False)
         
         if use_cloud:
             # Usar Google Cloud Storage
             filepath = f"products/{filename}"
             saved_path = default_storage.save(filepath, webp_content)
             
-            # Retornar URL pública
-            if hasattr(default_storage, 'url'):
-                return default_storage.url(saved_path)
-            else:
-                # Construir URL manualmente para GCS
-                bucket_name = getattr(settings, 'GS_BUCKET_NAME', 'default-bucket')
-                return f"https://storage.googleapis.com/{bucket_name}/{saved_path}"
+            # Retornar URL pública de GCS
+            bucket_name = getattr(settings, 'GS_BUCKET_NAME', 'ecommerce-media-storage')
+            return f"https://storage.googleapis.com/{bucket_name}/{saved_path}"
         else:
             # Guardar localmente
             filepath = os.path.join('products', filename)

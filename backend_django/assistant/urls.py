@@ -12,8 +12,12 @@ from .views_simple import (
     get_quick_actions,
     get_suggestions
 )
+from .views_diagnostic import test_ai_connection
 
 urlpatterns = [
+    # Diagnostic endpoint (admin only)
+    path('test-ai/', test_ai_connection, name='assistant-test-ai'),
+    
     # Chat endpoints
     path('chat/', chat_message, name='assistant-chat'),
     path('conversations/', list_conversations, name='assistant-conversations'),

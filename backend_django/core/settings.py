@@ -165,11 +165,20 @@ USE_CLOUD_STORAGE = config('USE_CLOUD_STORAGE', default=not DEBUG, cast=bool)
 if USE_CLOUD_STORAGE:
     # Google Cloud Storage settings
     DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
-    GS_BUCKET_NAME = config('GS_BUCKET_NAME', default='')
-    GS_PROJECT_ID = config('GS_PROJECT_ID', default='')
-    GS_CREDENTIALS = config('GOOGLE_APPLICATION_CREDENTIALS', default='')
+    GS_BUCKET_NAME = config('GS_BUCKET_NAME', default='ecommerce-media-storage')
+    GS_PROJECT_ID = config('GCP_PROJECT_ID', default='big-axiom-474503-m5')
+    
+    # Configurar credenciales desde variable de entorno o archivo
+    google_creds_path = config('GOOGLE_APPLICATION_CREDENTIALS', default='')
+    if google_creds_path and os.path.exists(google_creds_path):
+        GS_CREDENTIALS = google_creds_path
+    else:
+        # En Cloud Run, las credenciales se obtienen automáticamente del metadata server
+        GS_CREDENTIALS = None
+    
     GS_DEFAULT_ACL = 'publicRead'
     GS_FILE_OVERWRITE = False
+    GS_LOCATION = 'products'  # Subcarpeta dentro del bucket
     MEDIA_URL = f'https://storage.googleapis.com/{GS_BUCKET_NAME}/'
 else:
     # Local file storage for development
