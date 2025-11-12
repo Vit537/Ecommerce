@@ -92,29 +92,48 @@ def save_product_image(image_file, product_name, index=0, use_cloud=None):
     Returns:
         URL de la imagen guardada
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
+        logger.info(f"🖼️ Iniciando guardado de imagen: {product_name} (index: {index})")
+        
         # Convertir a WebP
         webp_content = convert_to_webp(image_file)
+        logger.info(f"✅ Imagen convertida a WebP")
         
         # Generar nombre de archivo
         filename = generate_image_filename(product_name, index)
+        logger.info(f"📝 Nombre de archivo generado: {filename}")
         
         # Determinar si usar cloud storage
         if use_cloud is None:
             use_cloud = getattr(settings, 'USE_CLOUD_STORAGE', False)
         
+        logger.info(f"☁️ Usando Cloud Storage: {use_cloud}")
+        
         if use_cloud:
             # Usar Google Cloud Storage
             filepath = f"products/{filename}"
-            saved_path = default_storage.save(filepath, webp_content)
+            logger.info(f"📤 Subiendo a GCS: {filepath}")
+            
+            try:
+                saved_path = default_storage.save(filepath, webp_content)
+                logger.info(f"✅ Guardado en GCS: {saved_path}")
+            except Exception as e:
+                logger.error(f"❌ Error al guardar en GCS: {str(e)}", exc_info=True)
+                raise
             
             # Retornar URL pública de GCS
             bucket_name = getattr(settings, 'GS_BUCKET_NAME', 'ecommerce-media-storage')
-            return f"https://storage.googleapis.com/{bucket_name}/{saved_path}"
+            url = f"https://storage.googleapis.com/{bucket_name}/{saved_path}"
+            logger.info(f"🔗 URL generada: {url}")
+            return url
         else:
             # Guardar localmente
             filepath = os.path.join('products', filename)
             full_path = os.path.join(settings.MEDIA_ROOT, filepath)
+            logger.info(f"💾 Guardando localmente: {full_path}")
             
             # Crear directorio si no existe
             os.makedirs(os.path.dirname(full_path), exist_ok=True)
@@ -124,9 +143,12 @@ def save_product_image(image_file, product_name, index=0, use_cloud=None):
                 f.write(webp_content.read())
             
             # Retornar URL relativa
-            return f"{settings.MEDIA_URL}{filepath}".replace('\\', '/')
+            url = f"{settings.MEDIA_URL}{filepath}".replace('\\', '/')
+            logger.info(f"🔗 URL generada: {url}")
+            return url
     
     except Exception as e:
+        logger.error(f"❌ Error al guardar imagen: {str(e)}", exc_info=True)
         raise ValueError(f"Error al guardar imagen: {str(e)}")
 
 

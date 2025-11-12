@@ -77,9 +77,16 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Crear producto con manejo de imágenes"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         try:
+            logger.info(f"🔍 Creando producto - FILES: {request.FILES.keys()}")
+            logger.info(f"🔍 Creando producto - DATA: {request.data.keys()}")
+            
             # Extraer imágenes del request
             image_files = request.FILES.getlist('images')
+            logger.info(f"📸 Imágenes recibidas: {len(image_files)} archivos")
             
             # Crear el producto
             serializer = self.get_serializer(data=request.data)
@@ -88,14 +95,24 @@ class ProductViewSet(viewsets.ModelViewSet):
             # Procesar imágenes si existen
             if image_files:
                 product_name = serializer.validated_data.get('name', 'product')
+                logger.info(f"📤 Procesando {len(image_files)} imágenes para producto: {product_name}")
+                
+                from django.conf import settings
+                logger.info(f"☁️ USE_CLOUD_STORAGE: {getattr(settings, 'USE_CLOUD_STORAGE', False)}")
+                logger.info(f"🪣 GS_BUCKET_NAME: {getattr(settings, 'GS_BUCKET_NAME', 'NO CONFIGURADO')}")
+                
                 image_urls = process_product_images(image_files, product_name)
                 serializer.validated_data['images'] = image_urls
+                logger.info(f"✅ Imágenes procesadas: {image_urls}")
+            else:
+                logger.warning("⚠️ No se recibieron archivos de imagen")
             
             # Guardar producto
             if request.user.is_authenticated:
                 serializer.validated_data['created_by'] = request.user
             
             self.perform_create(serializer)
+            logger.info(f"✅ Producto creado con ID: {serializer.data['id']}")
             
             # Retornar con serializer de lectura
             headers = self.get_success_headers(serializer.data)
@@ -105,6 +122,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             return Response(return_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
         
         except Exception as e:
+            logger.error(f"❌ Error al crear producto: {str(e)}", exc_info=True)
             return Response(
                 {'error': f'Error al crear producto: {str(e)}'}, 
                 status=status.HTTP_400_BAD_REQUEST
