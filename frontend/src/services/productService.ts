@@ -180,6 +180,21 @@ class ProductService {
   }
 
   /**
+   * Crear nuevo producto con imágenes
+   */
+  async createProductWithImages(formData: FormData): Promise<Product> {
+    try {
+      console.log('🔄 [ProductService] Creating product with images');
+      const response = await apiService.postFormData<Product>(API_ENDPOINTS.PRODUCTS.CREATE, formData);
+      console.log('✅ [ProductService] Product created successfully with images');
+      return response;
+    } catch (error: any) {
+      console.error('❌ [ProductService] Error creating product with images:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Actualizar producto
    */
   async updateProduct(id: string, data: Partial<ProductCreateData>): Promise<Product> {
@@ -190,6 +205,21 @@ class ProductService {
       return response;
     } catch (error: any) {
       console.error('❌ [ProductService] Error updating product:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualizar producto con imágenes
+   */
+  async updateProductWithImages(id: string, formData: FormData): Promise<Product> {
+    try {
+      console.log('🔄 [ProductService] Updating product with images:', id);
+      const response = await apiService.putFormData<Product>(API_ENDPOINTS.PRODUCTS.UPDATE(id), formData);
+      console.log('✅ [ProductService] Product updated successfully with images');
+      return response;
+    } catch (error: any) {
+      console.error('❌ [ProductService] Error updating product with images:', error);
       throw error;
     }
   }

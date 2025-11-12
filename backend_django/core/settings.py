@@ -48,6 +48,7 @@ THIRD_PARTY_APPS = [
     'corsheaders',
     'django_filters',
     'django_extensions',
+    'storages',  # Para Google Cloud Storage
 ]
 
 LOCAL_APPS = [
@@ -60,6 +61,8 @@ LOCAL_APPS = [
     'reports',
     'ml_predictions',
     'assistant',  # Sistema de chatbot asistente
+    'finance',  # Sistema de gestión financiera
+    'notifications',  # Sistema de notificaciones por email
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -151,11 +154,28 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Media files configuration
+# En producción usar Google Cloud Storage, en desarrollo usar sistema de archivos local
+USE_CLOUD_STORAGE = config('USE_CLOUD_STORAGE', default=not DEBUG, cast=bool)
+
+if USE_CLOUD_STORAGE:
+    # Google Cloud Storage settings
+    DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+    GS_BUCKET_NAME = config('GS_BUCKET_NAME', default='')
+    GS_PROJECT_ID = config('GS_PROJECT_ID', default='')
+    GS_CREDENTIALS = config('GOOGLE_APPLICATION_CREDENTIALS', default='')
+    GS_DEFAULT_ACL = 'publicRead'
+    GS_FILE_OVERWRITE = False
+    MEDIA_URL = f'https://storage.googleapis.com/{GS_BUCKET_NAME}/'
+else:
+    # Local file storage for development
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -256,6 +276,18 @@ CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
 GROQ_API_KEY = config('GROQ_API_KEY', default='')
 OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
 
+# ========================================
+# STRIPE PAYMENT CONFIGURATION
+# ========================================
+# Configurar las claves en variables de entorno (.env local o GitHub Secrets)
+# Obtener las claves en: https://dashboard.stripe.com/test/apikeys
+STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
+STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
+
+# QR Code Payment Configuration
+QR_CODE_IMAGE_PATH = os.path.join(BASE_DIR, 'static', 'qr_codes', 'banco_qr.jpg')
+
 # Logging configuration
 LOGGING = {
     'version': 1,
@@ -284,3 +316,7 @@ LOGGING = {
         },
     },
 }
+
+
+# QR Code Payment Configuration
+QR_CODE_IMAGE_PATH = os.path.join(BASE_DIR, 'static', 'qr_codes', 'banco_qr.jpg')

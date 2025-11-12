@@ -33,6 +33,9 @@ urlpatterns = [
     path('api/orders/', include('orders.urls')),
     path('api/ml/', include('ml_predictions.urls')),  # Machine Learning
     path('api/assistant/', include('assistant.urls')),  # Chatbot Asistente
+    path('api/finance/', include('finance.urls')),  # Sistema de gestión financiera
+    path('api/notifications/', include('notifications.urls')),  # Sistema de notificaciones
+    path('api/cashier/', include('employees.cashier_urls')),  # Sistema de caja y ventas en tienda
     
 
 ]
@@ -40,4 +43,6 @@ urlpatterns = [
 # Serve media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    # Durante desarrollo, Django servirá archivos de STATICFILES_DIRS automáticamente con runserver
+    # Si necesitas servir desde STATIC_ROOT (después de collectstatic), descomenta la siguiente línea:
+    # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

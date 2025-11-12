@@ -9,4 +9,12 @@ router.register(r'invoices', views.InvoiceViewSet)
 router.register(r'payment-methods', views.PaymentMethodViewSet)
 router.register(r'shipping-methods', views.ShippingMethodViewSet)
 
-urlpatterns = router.urls
+urlpatterns = [
+    # Stripe endpoints
+    path('create-payment-intent/', views.create_payment_intent, name='create-payment-intent'),
+    path('stripe-webhook/', views.stripe_webhook, name='stripe-webhook'),
+    
+    # QR Code payment endpoints
+    path('create-qr-payment/', views.create_qr_payment, name='create-qr-payment'),
+    path('confirm-qr-payment/', views.confirm_qr_payment, name='confirm-qr-payment'),
+] + router.urls

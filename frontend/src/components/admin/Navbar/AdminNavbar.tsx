@@ -18,12 +18,18 @@ import {
   Bell,
   Search,
   User,
+  FileText,
+  DollarSign,
   LogOut,
   ChevronUp,
   Sparkles,
+  CreditCard,
+  Clock,
+  PackageCheck,
 } from "lucide-react";
 import { useAuth } from "../../../contexts/AuthContext";
 import AIAssistantChatEnhanced from "../AIAssistant/AIAssistantChatEnhanced";
+import NotificationDropdown from "./NotificationDropdown";
 // import AIAssistantChat from '../AIAssistant/AIAssistantChat';
 
 const navigationConfig = [
@@ -51,50 +57,84 @@ const navigationConfig = [
       // { id: 'inventory', label: 'Inventario', path: '/admin/inventory' }
     ],
   },
-  {
-    id: "orders",
-    label: "Órdenes",
-    icon: ShoppingCart,
-    section: "main",
-    subsections: [
-      { id: "orders-list", label: "Todas las órdenes", path: "/admin/orders" },
-      { id: "payments", label: "Pagos", path: "/admin/payments" },
-      { id: "invoices", label: "Facturas", path: "/admin/invoices" },
-      { id: "cart", label: "Carritos", path: "/admin/carts" },
-    ],
-  },
+  // {
+  //   id: "orders",
+  //   label: "Órdenes",
+  //   icon: ShoppingCart,
+  //   section: "main",
+  //   subsections: [
+  //     { id: "orders-list", label: "Todas las órdenes", path: "/admin/orders" },
+  //     { id: "payments", label: "Pagos", path: "/admin/payments" },
+  //     { id: "invoices", label: "Facturas", path: "/admin/invoices" },
+  //     { id: "cart", label: "Carritos", path: "/admin/carts" },
+  //   ],
+  // },
   {
     id: "customers",
-    label: "Usuarios del sistema",
+    label: "Clientes",
     icon: Users,
     section: "main",
     subsections: [
       {
         id: "customers-list",
-        label: "Todos los clientes",
+        label: "Gestión de clientes",
         path: "/admin/customers",
       },
-      { id: "addresses", label: "Direcciones", path: "/admin/addresses" },
+      // { id: "addresses", label: "Direcciones", path: "/admin/addresses" },
     ],
   },
   {
-    id: "employees",
-    label: "Empleados",
+    id: "staff",
+    label: "Usuarios del Sistema",
     icon: UserCog,
     section: "main",
-    path: "/admin/employees",
-  },
-  {
-    id: "iam",
-    label: "Seguridad",
-    icon: Shield,
-    section: "security",
     subsections: [
-      { id: "users", label: "Usuarios", path: "/admin/users" },
-      { id: "roles", label: "Roles", path: "/admin/roles" },
-      { id: "permissions", label: "Permisos", path: "/admin/permissions" },
+      {
+        id: "staff-list",
+        label: "Cajeros y Administradores",
+        path: "/admin/staff",
+      },
+      // {
+      //   id: "employees-list",
+      //   label: "Empleados",
+      //   path: "/admin/employees",
+      // },
     ],
   },
+  {
+    id: "cashier",
+    label: "Cajero",
+    icon: CreditCard,
+   
+    section: "operations",
+    subsections: [
+      {
+        id: "cashier-pos",
+        label: "Punto de Venta (POS)",
+        path: "/cashier/pos",
+      },
+      {
+        id: "cashier-shifts",
+        label: "Turnos y Cierres",
+        path: "/cashier/turnos",
+      },
+      {
+        id: "cashier-pickup",
+        label: "Retiro de Pedidos",
+        path: "/cashier/retiros",
+      },
+    ],
+  },
+  // {
+  //   id: "iam",
+  //   label: "Seguridad",
+  //   icon: Shield,
+  //   section: "security",
+  //   subsections: [
+  //     { id: "roles", label: "Roles", path: "/admin/roles" },
+  //     { id: "permissions", label: "Permisos", path: "/admin/permissions" },
+  //   ],
+  // },
   {
     id: "ml",
     label: "Machine Learning",
@@ -128,6 +168,36 @@ const navigationConfig = [
     path: "/admin/reports",
   },
   {
+    id: "invoices",
+    label: "Facturas",
+    icon: FileText,
+    section: "analytics",
+    path: "/admin/invoices",
+  },
+  {
+    id: "finance",
+    label: "Finanzas",
+    icon: DollarSign,
+    section: "analytics",
+    subsections: [
+      {
+        id: "finance-dashboard",
+        label: "Dashboard Financiero",
+        path: "/admin/finance/dashboard",
+      },
+      {
+        id: "expenses",
+        label: "Gestión de Egresos",
+        path: "/admin/finance/expenses",
+      },
+      {
+        id: "transactions",
+        label: "Transacciones",
+        path: "/admin/finance/transactions",
+      },
+    ],
+  },
+  {
     id: "assistant",
     label: "Asistente IA",
     icon: Sparkles,
@@ -140,7 +210,13 @@ const navigationConfig = [
     label: "Configuración",
     icon: Settings,
     section: "tools",
-    path: "/admin/settings",
+    subsections: [
+      {
+        id: "notifications-settings",
+        label: "Notificaciones",
+        path: "/admin/settings/notifications",
+      },
+    ],
   },
 ];
 
@@ -303,6 +379,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
   const [activeItem, setActiveItem] = useState("dashboard");
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isChatMinimized, setIsChatMinimized] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   // Configurar el item activo basado en la ruta actual
   useEffect(() => {
@@ -426,6 +503,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
 
   const groupedNav = {
     main: navigationConfig.filter((item) => item.section === "main"),
+    operations: navigationConfig.filter((item) => item.section === "operations"),
     security: navigationConfig.filter((item) => item.section === "security"),
     analytics: navigationConfig.filter((item) => item.section === "analytics"),
     tools: navigationConfig.filter((item) => item.section === "tools"),
@@ -466,14 +544,26 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
             ))}
           </div>
 
-          <div className="mb-6">
+          {/* Bloque para operaciones (Cajero) */}
+          {groupedNav.operations.length > 0 && (
+            <div className="mb-6">
+              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider px-4 mb-2">
+                Operaciones
+              </div>
+              {groupedNav.operations.map((item) => (
+                <NavItem key={item.id} item={item} />
+              ))}
+            </div>
+          )}
+
+          {/* <div className="mb-6">
             <div className="text-xs font-bold text-gray-500 uppercase tracking-wider px-4 mb-2">
               Seguridad
             </div>
             {groupedNav.security.map((item) => (
               <NavItem key={item.id} item={item} />
             ))}
-          </div>
+          </div> */}
 
           <div className="mb-6">
             <div className="text-xs font-bold text-gray-500 uppercase tracking-wider px-4 mb-2">
@@ -535,7 +625,10 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
               <Sparkles size={20} className="group-hover:scale-110 transition-transform" />
             </button> */}
 
-            <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors text-primary">
+            <button
+              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors text-primary"
+            >
               <Bell size={20} />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
             </button>
@@ -646,6 +739,12 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ children }) => {
         }}
         onToggleMinimize={() => setIsChatMinimized(!isChatMinimized)}
         isMinimized={isChatMinimized}
+      />
+
+      {/* Notification Dropdown */}
+      <NotificationDropdown
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
       />
     </div>
   );

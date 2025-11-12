@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Filter, X } from 'lucide-react';
 import ProductGrid from '../../components/customer/Products/ProductGrid';
 import ProductDetailModal from '../../components/customer/Products/ProductDetailModal';
+// import ProductDetailModal from '../../components/customer/Products/ProductDetailModal';
 import FilterSidebar from '../../components/customer/Products/FilterSidebar';
 import SearchBar from '../../components/customer/Products/SearchBar';
 import { 

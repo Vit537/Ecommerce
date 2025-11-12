@@ -13,8 +13,10 @@ from .serializers import (
     CategorySerializer, 
     BrandSerializer, 
     ProductVariantSerializer,
-    SupplierSerializer
+    SupplierSerializer,
+    ProductCreateUpdateSerializer
 )
+from .utils import process_product_images, delete_product_image
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -41,6 +43,12 @@ class ProductViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'description', 'sku', 'brand__name', 'category__name']
     ordering_fields = ['price', 'created_at']
 
+    def get_serializer_class(self):
+        """Usar serializer diferente para crear/actualizar"""
+        if self.action in ['create', 'update', 'partial_update']:
+            return ProductCreateUpdateSerializer
+        return ProductSerializer
+
     def get_queryset(self):
         queryset = Product.objects.all().prefetch_related('variants')
         # Annotate total stock across variants to support stock-based filters
@@ -66,6 +74,95 @@ class ProductViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(annotated_total_stock=0)
 
         return queryset
+
+    def create(self, request, *args, **kwargs):
+        """Crear producto con manejo de imágenes"""
+        try:
+            # Extraer imágenes del request
+            image_files = request.FILES.getlist('images')
+            
+            # Crear el producto
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            
+            # Procesar imágenes si existen
+            if image_files:
+                product_name = serializer.validated_data.get('name', 'product')
+                image_urls = process_product_images(image_files, product_name)
+                serializer.validated_data['images'] = image_urls
+            
+            # Guardar producto
+            if request.user.is_authenticated:
+                serializer.validated_data['created_by'] = request.user
+            
+            self.perform_create(serializer)
+            
+            # Retornar con serializer de lectura
+            headers = self.get_success_headers(serializer.data)
+            product = Product.objects.get(pk=serializer.data['id'])
+            return_serializer = ProductSerializer(product, context={'request': request})
+            
+            return Response(return_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        
+        except Exception as e:
+            return Response(
+                {'error': f'Error al crear producto: {str(e)}'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def update(self, request, *args, **kwargs):
+        """Actualizar producto con manejo de imágenes"""
+        try:
+            partial = kwargs.pop('partial', False)
+            instance = self.get_object()
+            
+            # Extraer imágenes del request
+            image_files = request.FILES.getlist('images')
+            
+            # Actualizar datos del producto
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            
+            # Procesar nuevas imágenes si existen
+            if image_files:
+                product_name = serializer.validated_data.get('name', instance.name)
+                # Eliminar imágenes antiguas y procesar nuevas
+                existing_images = instance.images if isinstance(instance.images, list) else []
+                image_urls = process_product_images(image_files, product_name, existing_images)
+                serializer.validated_data['images'] = image_urls
+            
+            self.perform_update(serializer)
+            
+            # Retornar con serializer de lectura
+            product = Product.objects.get(pk=instance.pk)
+            return_serializer = ProductSerializer(product, context={'request': request})
+            
+            return Response(return_serializer.data)
+        
+        except Exception as e:
+            return Response(
+                {'error': f'Error al actualizar producto: {str(e)}'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def destroy(self, request, *args, **kwargs):
+        """Eliminar producto y sus imágenes"""
+        try:
+            instance = self.get_object()
+            
+            # Eliminar imágenes asociadas
+            if instance.images and isinstance(instance.images, list):
+                for image_url in instance.images:
+                    delete_product_image(image_url)
+            
+            self.perform_destroy(instance)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        
+        except Exception as e:
+            return Response(
+                {'error': f'Error al eliminar producto: {str(e)}'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 

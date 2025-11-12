@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from decimal import Decimal
 import uuid
 
 User = get_user_model()
@@ -324,4 +325,126 @@ class Payroll(models.Model):
     def save(self, *args, **kwargs):
         if self.status in ['calculated', 'approved', 'paid']:
             self.calculate_payroll()
+        super().save(*args, **kwargs)
+
+
+class Shift(models.Model):
+    """
+    Turnos de trabajo para cajeros
+    Registra inicio y cierre de turno con arqueo de caja
+    """
+    STATUS_CHOICES = [
+        ('open', 'Abierto'),
+        ('closed', 'Cerrado'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    cashier = models.ForeignKey(User, on_delete=models.PROTECT, related_name='cashier_shifts')
+    employee = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='shifts')
+    
+    # Información del turno
+    start_time = models.DateTimeField(auto_now_add=True)
+    end_time = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    
+    # Arqueo de caja
+    initial_cash = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Efectivo inicial en caja")
+    final_cash = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Efectivo final contado")
+    expected_cash = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Efectivo esperado según ventas")
+    difference = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Diferencia entre esperado y real")
+    
+    # Resumen de ventas
+    sales_count = models.IntegerField(default=0, help_text="Número de ventas realizadas")
+    total_cash_sales = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_card_sales = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_qr_sales = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_sales = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Información adicional
+    notes = models.TextField(blank=True, null=True)
+    closed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='closed_shifts')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-start_time']
+        indexes = [
+            models.Index(fields=['cashier', 'start_time']),
+            models.Index(fields=['status']),
+            models.Index(fields=['start_time']),
+        ]
+    
+    def __str__(self):
+        return f"Turno {self.cashier.get_full_name()} - {self.start_time.strftime('%Y-%m-%d %H:%M')}"
+    
+    @property
+    def duration(self):
+        """Duración del turno en minutos"""
+        if self.end_time:
+            delta = self.end_time - self.start_time
+            return int(delta.total_seconds() / 60)
+        else:
+            from django.utils import timezone
+            delta = timezone.now() - self.start_time
+            return int(delta.total_seconds() / 60)
+    
+    def calculate_expected_cash(self):
+        """Calcular efectivo esperado basado en ventas"""
+        self.expected_cash = self.initial_cash + self.total_cash_sales
+        return self.expected_cash
+    
+    def calculate_difference(self):
+        """Calcular diferencia entre esperado y real"""
+        if self.final_cash is not None:
+            self.difference = self.final_cash - self.expected_cash
+        return self.difference
+    
+    def close_shift(self, final_cash, closed_by=None):
+        """Cerrar el turno"""
+        from django.utils import timezone
+        self.end_time = timezone.now()
+        self.final_cash = final_cash
+        self.status = 'closed'
+        self.closed_by = closed_by
+        self.calculate_expected_cash()
+        self.calculate_difference()
+        self.save()
+    
+    def update_sales_summary(self):
+        """Actualizar resumen de ventas del turno"""
+        from orders.models import Order, Payment
+        
+        # Obtener todas las órdenes del turno
+        orders = Order.objects.filter(
+            processed_by=self.cashier,
+            created_at__gte=self.start_time
+        )
+        
+        if self.end_time:
+            orders = orders.filter(created_at__lte=self.end_time)
+        
+        self.sales_count = orders.count()
+        self.total_sales = sum(order.total_amount for order in orders)
+        
+        # Calcular ventas por método de pago
+        for order in orders:
+            payments = order.payments.filter(status='completed')
+            for payment in payments:
+                if payment.payment_method.payment_type in ['cash']:
+                    self.total_cash_sales += payment.amount
+                elif payment.payment_method.payment_type in ['credit_card', 'debit_card', 'stripe']:
+                    self.total_card_sales += payment.amount
+                elif payment.payment_method.payment_type in ['qr_code', 'mobile_payment']:
+                    self.total_qr_sales += payment.amount
+        
+        self.calculate_expected_cash()
+        self.save()
+    
+    def save(self, *args, **kwargs):
+        # Si se cierra el turno, calcular todo
+        if self.status == 'closed' and self.final_cash is not None:
+            self.calculate_expected_cash()
+            self.calculate_difference()
+        
         super().save(*args, **kwargs)

@@ -8,7 +8,7 @@ import { API_ENDPOINTS } from '../config/api';
 export interface PaymentMethod {
   id: string;
   name: string;
-  payment_type: 'cash' | 'credit_card' | 'debit_card' | 'bank_transfer' | 'mobile_payment' | 'check' | 'store_credit';
+  payment_type: 'cash' | 'credit_card' | 'debit_card' | 'bank_transfer' | 'mobile_payment' | 'check' | 'store_credit' | 'stripe' | 'qr_code';
   description: string;
   is_active: boolean;
   requires_approval: boolean;

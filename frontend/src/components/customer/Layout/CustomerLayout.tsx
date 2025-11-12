@@ -9,9 +9,10 @@ import { categoryService, Category } from '../../../services/productService';
 const CustomerLayout: React.FC = () => {
   const navigate = useNavigate();
   const { totalItems, isCartOpen, openCart, closeCart } = useCart();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Cargar categorías
   useEffect(() => {
@@ -25,6 +26,14 @@ const CustomerLayout: React.FC = () => {
     };
     loadCategories();
   }, []);
+
+  // Cerrar el menú si se hace click fuera
+  useEffect(() => {
+    if (!showUserMenu) return;
+    const handleClick = () => setShowUserMenu(false);
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, [showUserMenu]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -82,17 +91,58 @@ const CustomerLayout: React.FC = () => {
                 )}
               </button>
 
-              {/* User */}
-              <button 
-                onClick={() => navigate(isAuthenticated ? '/profile' : '/customer/login')}
-                className="p-2 hover:bg-gray-100 transition-colors relative"
-                title={isAuthenticated ? user?.first_name : 'Iniciar sesión'}
-              >
-                <User size={20} />
-                {isAuthenticated && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-green-500 rounded-full"></span>
+              {/* User with submenu */}
+              <div className="relative">
+                {isAuthenticated ? (
+                  <>
+                    <button
+                      className="p-2 hover:bg-gray-100 transition-colors relative"
+                      title={user?.first_name}
+                      onClick={e => {
+                        e.stopPropagation();
+                        setShowUserMenu((prev) => !prev);
+                      }}
+                    >
+                      <User size={20} />
+                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-green-500 rounded-full"></span>
+                    </button>
+                    {showUserMenu && (
+                      <div
+                        className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <button
+                          className="w-full text-left px-4 py-3 text-sm hover:bg-gray-100 transition-colors rounded-t-lg"
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            navigate('/profile/customer');
+                          }}
+                        >
+                          Perfil del Cliente
+                        </button>
+                        <button
+                          className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-100 transition-colors rounded-b-lg"
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            logout();
+                            navigate('/shop');
+                          }}
+                        >
+                          Cerrar sesión
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    onClick={() => navigate('/customer/login')}
+                    className="p-2 hover:bg-gray-100 transition-colors relative"
+                    title="Iniciar sesión"
+                  >
+                    <User size={20} />
+                  </button>
                 )}
-              </button>
+              </div>
 
               {/* Mobile menu toggle */}
               <button 

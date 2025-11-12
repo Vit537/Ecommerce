@@ -23,15 +23,27 @@ import CustomerLoginPage from "./pages/customer/CustomerLoginPage";
 import AdminNavbar from "./components/admin/Navbar/AdminNavbar";
 import CashierLayout from "./components/cashier/POS/CashierLayout";
 import CustomerLayout from './components/customer/Layout/CustomerLayout';
-import CartSidebar from "./components/cart/CartSidebar";
+import CartSidebar from "../../basura frontend/cart/CartSidebar";
 import CheckoutPage from "./pages/customer/CheckoutPage";
 import CartPage from "./pages/customer/CartPage";
 import ShopPage from "./pages/customer/ShopPage";
+
+// Páginas de Cajero
+import POSPage from "./pages/cashier/POSPage";
+import TurnosPage from "./pages/cashier/TurnosPage";
+import RetirosPage from "./pages/cashier/RetirosPage";
 
 // Páginas de Administración
 import ProductsManagement from "./pages/admin/ProductsManagementGrid";
 import CategoriesManagement from "./pages/admin/CategoriesManagementTable";
 import ReportsPage from "./pages/admin/ReportsPage";
+import InvoicesManagement from "./pages/admin/InvoicesManagement";
+
+// Páginas de Gestión de Usuarios
+import CustomersListPage from "./pages/admin/customers/CustomersListPage";
+import CustomerDetailsPage from "./pages/admin/customers/CustomerDetailsPage";
+import StaffManagementPage from "./pages/admin/staff/StaffManagementPage";
+import StaffDetailsPage from "./pages/admin/staff/StaffDetailsPage";
 
 // Páginas de Machine Learning
 import MLPredictionsPage from "./pages/admin/ml/MLPredictionsPage";
@@ -40,8 +52,17 @@ import MLTrendsPage from "./pages/admin/ml/MLTrendsPage";
 import MLDashboardPage from "./pages/admin/ml/MLDashboardPage";
 import MLCustomerSegmentationPage from "./pages/admin/ml/MLCustomerSegmentationPage";
 
+// Páginas de Finanzas
+import FinanceDashboardPage from "./pages/admin/finance/FinanceDashboardPage";
+
+// Páginas de Notificaciones
+import NotificationSettingsPage from "./pages/admin/NotificationSettingsPage";
+import ExpensesPage from "./pages/admin/finance/ExpensesPage";
+import TransactionsPage from "./pages/admin/finance/TransactionsPage";
+
 // Página de Perfil de Usuario
 import UserProfile from "./pages/UserProfile";
+import CustomerProfile from "./pages/customer/CustomerProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 
 
@@ -177,6 +198,16 @@ const App: React.FC = () => {
                 }
               />
 
+              {/* Invoices Management */}
+              <Route
+                path="/admin/invoices"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "gerente"]}>
+                    <InvoicesManagement />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Reports - Admin area (wrapped by AdminNavbar inside the page or explicitly here) */}
               <Route
                 path="/admin/reports"
@@ -192,6 +223,48 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute allowedRoles={["admin", "gerente"]}>
                     <CategoriesManagement />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ========================================
+                  GESTIÓN DE USUARIOS
+                  ======================================== */}
+              
+              {/* Gestión de Clientes */}
+              <Route
+                path="/admin/customers"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "gerente"]}>
+                    <CustomersListPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin/customers/:id"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "gerente"]}>
+                    <CustomerDetailsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Gestión de Staff (Cajeros y Administradores) */}
+              <Route
+                path="/admin/staff"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <StaffManagementPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin/staff/:id"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <StaffDetailsPage />
                   </ProtectedRoute>
                 }
               />
@@ -242,11 +315,89 @@ const App: React.FC = () => {
                 }
               />
 
-              {/* Ruta para Cajero */}
+              {/* Rutas de Finanzas */}
+              <Route
+                path="/admin/finance"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "gerente"]}>
+                    <FinanceDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/finance/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "gerente"]}>
+                    <FinanceDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/finance/expenses"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "gerente"]}>
+                    <ExpensesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/finance/transactions"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "gerente"]}>
+                    <TransactionsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Rutas de Notificaciones */}
+              <Route
+                path="/admin/settings/notifications"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "gerente"]}>
+                    <NotificationSettingsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Rutas para Cajero */}
+              <Route
+                path="/cashier/pos"
+                element={
+                  <ProtectedRoute allowedRoles={["cajero", "cashier", "admin", "gerente"]}>
+                    <AdminNavbar >
+                    <POSPage />
+                    </AdminNavbar>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/cashier/turnos"
+                element={
+                  <ProtectedRoute allowedRoles={["cajero", "cashier", "admin", "gerente"]}>
+                    <AdminNavbar>
+                    <TurnosPage />
+                    </AdminNavbar>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/cashier/retiros"
+                element={
+                  <ProtectedRoute allowedRoles={["cajero", "cashier", "admin", "gerente"]}>
+                    <AdminNavbar >
+                    <RetirosPage />
+                    </AdminNavbar>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Ruta legacy para mantener compatibilidad */}
               <Route
                 path="/pos"
                 element={
-                  <ProtectedRoute allowedRoles={["cajero", "admin", "gerente"]}>
+                  <ProtectedRoute allowedRoles={["cajero", "cashier", "admin", "gerente"]}>
                     <CashierLayout />
                   </ProtectedRoute>
                 }
@@ -258,7 +409,16 @@ const App: React.FC = () => {
                 <Route index element={<Navigate to="/shop" replace />} />
                 <Route path="shop" element={<ShopPage />} />
                 <Route path="cart" element={<CartPage />} />
-                {/* <Route path="checkout" element={<CheckoutPage />} /> */}
+                
+                {/* Perfil de Cliente requiere autenticación */}
+                <Route
+                  path="profile/customer"
+                  element={
+                    <ProtectedRoute redirectTo="/customer/login">
+                      <CustomerProfile />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Checkout requiere autenticación: redirige a login de cliente si no está autenticado */}
                 <Route

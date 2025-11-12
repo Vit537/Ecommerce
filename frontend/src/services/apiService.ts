@@ -118,6 +118,27 @@ class ApiService {
     return response.data;
   }
 
+  // Métodos para FormData (con imágenes)
+  async postFormData<T = any>(url: string, formData: FormData, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.post<T>(url, formData, {
+      ...config,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
+  async putFormData<T = any>(url: string, formData: FormData, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.put<T>(url, formData, {
+      ...config,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
   // Método para subir archivos
   async upload<T = any>(url: string, file: File, onProgress?: (progress: number) => void): Promise<T> {
     const formData = new FormData();

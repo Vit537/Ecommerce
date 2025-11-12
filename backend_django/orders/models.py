@@ -19,6 +19,8 @@ class PaymentMethod(models.Model):
         ('mobile_payment', 'Pago Móvil'),
         ('check', 'Cheque'),
         ('store_credit', 'Crédito de Tienda'),
+        ('stripe', 'Stripe (Tarjeta)'),
+        ('qr_code', 'Código QR'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -73,6 +75,8 @@ class Order(models.Model):
         ('pending', 'Pendiente'),
         ('confirmed', 'Confirmado'),
         ('processing', 'Procesando'),
+        ('ready_for_pickup', 'Listo para Retiro'),
+        ('picked_up', 'Retirado'),
         ('shipped', 'Enviado'),
         ('delivered', 'Entregado'),
         ('cancelled', 'Cancelado'),
@@ -85,11 +89,27 @@ class Order(models.Model):
         ('phone', 'Venta por Teléfono'),
     ]
     
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('paid', 'Pagado'),
+        ('partially_paid', 'Parcialmente Pagado'),
+        ('refunded', 'Reembolsado'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order_number = models.CharField(max_length=50, unique=True)
     customer = models.ForeignKey(User, on_delete=models.PROTECT, related_name='orders')
     order_type = models.CharField(max_length=20, choices=ORDER_TYPES, default='online')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    
+    # Información para retiro de pedidos
+    pickup_code = models.CharField(max_length=6, blank=True, null=True, help_text="Código de 6 dígitos para retiro")
+    pickup_ready_at = models.DateTimeField(null=True, blank=True)
+    picked_up_at = models.DateTimeField(null=True, blank=True)
+    picked_up_by_name = models.CharField(max_length=255, blank=True, null=True)
+    picked_up_by_id = models.CharField(max_length=50, blank=True, null=True, help_text="Documento de identidad")
+    delivered_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='delivered_orders')
     
     # Totales
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -128,6 +148,30 @@ class Order(models.Model):
     
     def __str__(self):
         return f"Orden {self.order_number} - {self.customer.get_full_name()}"
+    
+    def generate_pickup_code(self):
+        """Generar código de retiro de 6 dígitos"""
+        import random
+        return ''.join([str(random.randint(0, 9)) for _ in range(6)])
+    
+    def mark_ready_for_pickup(self):
+        """Marcar orden como lista para retiro"""
+        from django.utils import timezone
+        self.status = 'ready_for_pickup'
+        self.pickup_ready_at = timezone.now()
+        if not self.pickup_code:
+            self.pickup_code = self.generate_pickup_code()
+        self.save()
+    
+    def process_pickup(self, picked_up_by_name, picked_up_by_id, delivered_by):
+        """Procesar el retiro del pedido"""
+        from django.utils import timezone
+        self.status = 'picked_up'
+        self.picked_up_at = timezone.now()
+        self.picked_up_by_name = picked_up_by_name
+        self.picked_up_by_id = picked_up_by_id
+        self.delivered_by = delivered_by
+        self.save()
     
     def save(self, *args, **kwargs):
         if not self.order_number:
@@ -214,6 +258,14 @@ class Payment(models.Model):
     # Información del pago
     transaction_id = models.CharField(max_length=255, blank=True, null=True)
     reference_number = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Stripe integration
+    stripe_payment_intent_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_client_secret = models.CharField(max_length=255, blank=True, null=True)
+    
+    # QR Payment integration
+    qr_image_url = models.CharField(max_length=500, blank=True, null=True)
+    qr_code_data = models.TextField(blank=True, null=True)  # Datos del QR para regenerar si es necesario
     
     # Fechas
     created_at = models.DateTimeField(auto_now_add=True)

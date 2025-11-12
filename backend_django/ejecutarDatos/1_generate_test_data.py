@@ -19,9 +19,12 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 django.setup()
 
 from django.contrib.auth import get_user_model
-from products.models import Category, Brand, Size, Color, Product, ProductVariant
-from orders.models import PaymentMethod, Order, OrderItem, Payment, Invoice
+from products.models import Category, Brand, Size, Color, Product, ProductVariant, Supplier, ProductSupplier
+from orders.models import PaymentMethod, ShippingMethod, Order, OrderItem, Payment, Invoice
 from permissions.models import Permission, Role, UserRole
+from employees.models import Department, Position, Employee
+from finance.models import ExpenseCategory
+from notifications.models import NotificationTemplate, NotificationSettings
 
 User = get_user_model()
 
@@ -31,17 +34,75 @@ def clear_data():
     print("🗑️  Limpiando datos existentes...")
     
     # Orden de eliminación para respetar foreign keys
+    # Notificaciones
+    from notifications.models import Notification
+    Notification.objects.all().delete()
+    NotificationTemplate.objects.all().delete()
+    NotificationSettings.objects.all().delete()
+    
+    # Finanzas
+    from finance.models import Expense, Transaction
+    Transaction.objects.all().delete()
+    Expense.objects.all().delete()
+    ExpenseCategory.objects.all().delete()
+    
+    # Empleados
+    from employees.models import Shift, Payroll, Attendance
+    Shift.objects.all().delete()
+    Payroll.objects.all().delete()
+    Attendance.objects.all().delete()
+    Employee.objects.all().delete()
+    Position.objects.all().delete()
+    Department.objects.all().delete()
+    
+    # Órdenes y Facturas
     Invoice.objects.all().delete()
     Payment.objects.all().delete()
     OrderItem.objects.all().delete()
     Order.objects.all().delete()
+    ShippingMethod.objects.all().delete()
+    PaymentMethod.objects.all().delete()
+    
+    # Productos
+    from orders.models import PurchaseOrderItem, PurchaseOrder, StockMovement
+    PurchaseOrderItem.objects.all().delete()
+    PurchaseOrder.objects.all().delete()
+    StockMovement.objects.all().delete()
+    ProductSupplier.objects.all().delete()
+    Supplier.objects.all().delete()
     ProductVariant.objects.all().delete()
     Product.objects.all().delete()
-    PaymentMethod.objects.all().delete()
     Color.objects.all().delete()
     Size.objects.all().delete()
     Brand.objects.all().delete()
     Category.objects.all().delete()
+    
+    # Carrito
+    from cart.models import CartItem, Cart
+    CartItem.objects.all().delete()
+    Cart.objects.all().delete()
+    
+    # Asistente/Chat
+    from assistant.models import AssistantFeedback, ChatMessage, ChatConversation
+    AssistantFeedback.objects.all().delete()
+    ChatMessage.objects.all().delete()
+    ChatConversation.objects.all().delete()
+    
+    # ML
+    from ml_predictions.models import (InventoryAlert, CustomerSegment, ProductRecommendation, 
+                                       SalesForecast, Prediction, MLModel)
+    InventoryAlert.objects.all().delete()
+    CustomerSegment.objects.all().delete()
+    ProductRecommendation.objects.all().delete()
+    SalesForecast.objects.all().delete()
+    Prediction.objects.all().delete()
+    MLModel.objects.all().delete()
+    
+    # Reportes
+    from reports.models import ReportLog
+    ReportLog.objects.all().delete()
+    
+    # Permisos y Usuarios
     UserRole.objects.all().delete()
     Role.objects.all().delete()
     Permission.objects.all().delete()
@@ -782,9 +843,9 @@ def create_payment_methods():
         ('Efectivo', 'cash', 'Pago en efectivo', 0, 0),
         ('Tarjeta de Crédito Visa', 'credit_card', 'Pago con tarjeta Visa', 2.5, 0),
         ('Tarjeta de Crédito Mastercard', 'credit_card', 'Pago con tarjeta Mastercard', 2.5, 0),
-        ('Tarjeta de Débito', 'debit_card', 'Pago con tarjeta de débito', 1.5, 0),
+        ('Tarjeta de Débito/Credito', 'stripe', 'Pago con tarjeta de débito', 1.5, 0),
         ('Transferencia Bancaria', 'bank_transfer', 'Transferencia bancaria directa', 0, 0),
-        ('Pago QR', 'mobile_payment', 'Pago mediante código QR', 1.0, 0),
+        ('Pago QR', 'qr_code', 'Pago mediante código QR', 1.0, 0),
     ]
     
     payment_methods = {}
@@ -807,7 +868,316 @@ def create_payment_methods():
     return payment_methods
 
 
-def create_orders(products, users, payment_methods):
+def create_shipping_methods():
+    """Crear métodos de envío"""
+    print("🚚 Creando métodos de envío...")
+    
+    shipping_methods_data = [
+        ('Retiro en Tienda', 'store_pickup', 'Retiro en nuestra tienda física', 0, 0,
+         {'street': 'Av. 16 de Julio #1234', 'city': 'La Paz', 'state': 'La Paz', 'country': 'Bolivia'}),
+        ('Envío a Domicilio - La Paz', 'home_delivery', 'Entrega en 1-2 días hábiles', 30, 2),
+        ('Envío a Domicilio - El Alto', 'home_delivery', 'Entrega en 2-3 días hábiles', 35, 3),
+        ('Envío Nacional', 'home_delivery', 'Entrega en 3-5 días hábiles', 50, 5),
+    ]
+    
+    shipping_methods = {}
+    for name, ship_type, desc, cost, days, *store_address in shipping_methods_data:
+        address = store_address[0] if store_address else {}
+        sm, created = ShippingMethod.objects.get_or_create(
+            name=name,
+            defaults={
+                'shipping_type': ship_type,
+                'description': desc,
+                'cost': Decimal(str(cost)),
+                'estimated_days': days,
+                'is_active': True,
+                'store_address': address,
+            }
+        )
+        shipping_methods[name] = sm
+        if created:
+            print(f"  ✓ Método de envío: {name}")
+    
+    print(f"✅ {len(shipping_methods)} métodos de envío creados\n")
+    return shipping_methods
+
+
+def create_suppliers():
+    """Crear proveedores"""
+    print("🏭 Creando proveedores...")
+    
+    suppliers_data = [
+        ('Textiles Andinos S.A.', 'Juan Pérez', 'contacto@textilesandinos.bo', '+591 2-2345678', 
+         'Av. Buenos Aires #500, La Paz', '1234567890', '30 días'),
+        ('Importadora Fashion Ltda.', 'María González', 'ventas@fashionltda.bo', '+591 2-2456789',
+         'Calle Comercio #234, La Paz', '0987654321', 'Al contado'),
+        ('Distribuidora de Calzado Nacional', 'Carlos Mamani', 'info@calzadonacional.bo', '+591 3-3567890',
+         'Zona Industrial, Santa Cruz', '5678901234', '45 días'),
+        ('Global Textiles Import', 'Ana Silva', 'contacto@globaltextiles.bo', '+591 4-4678901',
+         'Av. América #1000, Cochabamba', '2345678901', '60 días'),
+        ('Proveedor Deportivo Ltda', 'Pedro Quispe', 'ventas@deportivoltda.bo', '+591 2-2789012',
+         'Calle Max Paredes #678, El Alto', '3456789012', '30 días'),
+    ]
+    
+    suppliers = {}
+    for name, contact, email, phone, address, tax_id, terms in suppliers_data:
+        supplier, created = Supplier.objects.get_or_create(
+            name=name,
+            defaults={
+                'contact_person': contact,
+                'email': email,
+                'phone': phone,
+                'address': address,
+                'tax_id': tax_id,
+                'payment_terms': terms,
+                'is_active': True,
+            }
+        )
+        suppliers[name] = supplier
+        if created:
+            print(f"  ✓ Proveedor: {name}")
+    
+    print(f"✅ {len(suppliers)} proveedores creados\n")
+    return suppliers
+
+
+def create_product_suppliers(products, suppliers):
+    """Asignar proveedores a productos"""
+    print("🔗 Asignando proveedores a productos...")
+    
+    suppliers_list = list(suppliers.values())
+    count = 0
+    
+    for product in products:
+        # Cada producto tiene 1-2 proveedores
+        num_suppliers = random.randint(1, 2)
+        selected_suppliers = random.sample(suppliers_list, min(num_suppliers, len(suppliers_list)))
+        
+        for idx, supplier in enumerate(selected_suppliers):
+            # El costo del proveedor es un poco menor que el cost_price del producto
+            discount_factor = random.uniform(0.70, 0.85)
+            supplier_cost = product.cost_price * Decimal(str(discount_factor))
+            
+            ProductSupplier.objects.create(
+                product=product,
+                supplier=supplier,
+                supplier_sku=f'SUP-{supplier.name[:3].upper()}-{random.randint(1000, 9999)}',
+                cost_price=supplier_cost,
+                min_order_quantity=random.choice([5, 10, 20, 50]),
+                lead_time_days=random.choice([7, 14, 21, 30]),
+                is_primary=(idx == 0),  # El primero es el principal
+                is_active=True,
+            )
+            count += 1
+    
+    print(f"✅ {count} relaciones producto-proveedor creadas\n")
+
+
+def create_departments():
+    """Crear departamentos"""
+    print("🏢 Creando departamentos...")
+    
+    departments_data = [
+        ('Ventas', 'Departamento encargado de ventas en tienda y online'),
+        ('Gestión', 'Gerencia y administración general'),
+        ('Inventario', 'Control de stock y almacén'),
+        ('Atención al Cliente', 'Servicio y soporte al cliente'),
+        ('Marketing', 'Publicidad y promoción'),
+    ]
+    
+    departments = {}
+    for name, desc in departments_data:
+        dept, created = Department.objects.get_or_create(
+            name=name,
+            defaults={
+                'description': desc,
+                'is_active': True,
+            }
+        )
+        departments[name] = dept
+        if created:
+            print(f"  ✓ Departamento: {name}")
+    
+    print(f"✅ {len(departments)} departamentos creados\n")
+    return departments
+
+
+def create_positions(departments):
+    """Crear puestos de trabajo"""
+    print("💼 Creando puestos de trabajo...")
+    
+    positions_data = [
+        ('Gerente General', 'Gestión', 'Responsable de la operación completa', 5000, 8000),
+        ('Gerente de Ventas', 'Ventas', 'Supervisión del equipo de ventas', 4000, 6000),
+        ('Cajero', 'Ventas', 'Atención en caja y ventas directas', 2500, 3500),
+        ('Vendedor', 'Ventas', 'Atención al cliente y ventas', 2500, 3500),
+        ('Encargado de Inventario', 'Inventario', 'Control y gestión de stock', 3000, 4500),
+        ('Asistente de Inventario', 'Inventario', 'Apoyo en control de inventario', 2500, 3000),
+        ('Especialista en Atención al Cliente', 'Atención al Cliente', 'Soporte y atención especializada', 2800, 4000),
+        ('Coordinador de Marketing', 'Marketing', 'Planificación de campañas', 3500, 5000),
+    ]
+    
+    positions = {}
+    for title, dept_name, desc, min_sal, max_sal in positions_data:
+        pos, created = Position.objects.get_or_create(
+            title=title,
+            department=departments[dept_name],
+            defaults={
+                'description': desc,
+                'min_salary': Decimal(str(min_sal)),
+                'max_salary': Decimal(str(max_sal)),
+                'is_active': True,
+            }
+        )
+        positions[title] = pos
+        if created:
+            print(f"  ✓ Puesto: {title}")
+    
+    print(f"✅ {len(positions)} puestos creados\n")
+    return positions
+
+
+def create_employees(users, departments, positions):
+    """Crear perfiles de empleados para usuarios staff"""
+    print("👔 Creando perfiles de empleados...")
+    
+    # Obtener usuarios que son empleados (admin, manager, cashier)
+    staff_users = [users['admin'], users['manager'], users['cashier']]
+    
+    employees_data = [
+        (users['admin'], 'Gerente General', 'Gestión', 7000, None, 
+         'EMP-0001', 'Ana Rodríguez', '+591 7111-1111', 'Hermana'),
+        (users['manager'], 'Gerente de Ventas', 'Ventas', 5000, None,
+         'EMP-0002', 'Luis González', '+591 7222-2222', 'Padre'),
+        (users['cashier'], 'Cajero', 'Ventas', 3200, 20,
+         'EMP-0003', 'Carmen López', '+591 7333-3333', 'Madre'),
+    ]
+    
+    employees = {}
+    for user, position_title, dept_name, salary, hourly_rate, emp_id, emerg_name, emerg_phone, emerg_rel in employees_data:
+        employee, created = Employee.objects.get_or_create(
+            user=user,
+            defaults={
+                'employee_id': emp_id,
+                'department': departments[dept_name],
+                'position': positions[position_title],
+                'employment_status': 'active',
+                'employment_type': 'full_time' if hourly_rate is None else 'part_time',
+                'hire_date': user.hire_date if hasattr(user, 'hire_date') and user.hire_date else timezone.now().date() - timedelta(days=180),
+                'base_salary': Decimal(str(salary)),
+                'hourly_rate': Decimal(str(hourly_rate)) if hourly_rate else None,
+                'commission_rate': Decimal('2.5'),  # 2.5% de comisión
+                'emergency_contact_name': emerg_name,
+                'emergency_contact_phone': emerg_phone,
+                'emergency_contact_relationship': emerg_rel,
+                'bank_account_number': f'11{random.randint(10000000, 99999999)}',
+                'bank_name': random.choice(['Banco Nacional', 'Banco Unión', 'Banco Mercantil']),
+            }
+        )
+        employees[user.email] = employee
+        if created:
+            # Actualizar el user con la referencia al employee
+            user.is_active_employee = True
+            user.save()
+            print(f"  ✓ Empleado: {user.get_full_name()} - {position_title}")
+    
+    print(f"✅ {len(employees)} perfiles de empleados creados\n")
+    return employees
+
+
+def create_expense_categories():
+    """Crear categorías de gastos"""
+    print("💰 Creando categorías de gastos...")
+    
+    categories_data = [
+        ('Alquiler', 'fixed', 'Pago de alquiler de local'),
+        ('Servicios Básicos', 'fixed', 'Luz, agua, internet, teléfono'),
+        ('Salarios', 'fixed', 'Pago de nómina'),
+        ('Compra de Mercadería', 'variable', 'Compras a proveedores'),
+        ('Marketing y Publicidad', 'variable', 'Gastos en publicidad y promoción'),
+        ('Mantenimiento', 'variable', 'Reparaciones y mantenimiento'),
+        ('Transporte', 'variable', 'Fletes y transporte de mercadería'),
+        ('Suministros de Oficina', 'variable', 'Material de oficina y papelería'),
+        ('Impuestos', 'fixed', 'Pago de impuestos'),
+        ('Seguros', 'fixed', 'Seguros varios'),
+    ]
+    
+    expense_categories = {}
+    for name, cat_type, desc in categories_data:
+        cat, created = ExpenseCategory.objects.get_or_create(
+            name=name,
+            defaults={
+                'category_type': cat_type,
+                'description': desc,
+                'is_active': True,
+                'color': '#' + ''.join([random.choice('0123456789ABCDEF') for _ in range(6)]),
+            }
+        )
+        expense_categories[name] = cat
+        if created:
+            print(f"  ✓ Categoría de gasto: {name}")
+    
+    print(f"✅ {len(expense_categories)} categorías de gastos creadas\n")
+    return expense_categories
+
+
+def create_notification_templates():
+    """Crear plantillas de notificaciones"""
+    print("📧 Creando plantillas de notificaciones...")
+    
+    templates_data = [
+        ('order_created', 'Confirmación de Pedido #{{order_number}}',
+         '<h2>¡Gracias por tu compra!</h2><p>Tu pedido #{{order_number}} ha sido confirmado.</p><p>Total: Bs. {{total_amount}}</p>'),
+        ('payment_received', 'Pago Recibido - Pedido #{{order_number}}',
+         '<h2>Pago Confirmado</h2><p>Hemos recibido tu pago de Bs. {{amount}} para el pedido #{{order_number}}.</p>'),
+        ('payment_reminder', 'Recordatorio de Pago Pendiente',
+         '<h2>Recordatorio</h2><p>Tienes un pago pendiente de Bs. {{amount}}. Fecha de vencimiento: {{due_date}}</p>'),
+        ('low_stock', 'Alerta: Stock Bajo - {{product_name}}',
+         '<h2>Stock Bajo</h2><p>El producto {{product_name}} tiene solo {{stock_quantity}} unidades disponibles.</p>'),
+        ('daily_sales_report', 'Reporte Diario de Ventas - {{date}}',
+         '<h2>Resumen de Ventas</h2><p>Ventas del día: Bs. {{total_sales}}</p><p>Órdenes: {{orders_count}}</p>'),
+    ]
+    
+    for event, subject, html in templates_data:
+        template, created = NotificationTemplate.objects.get_or_create(
+            event_type=event,
+            defaults={
+                'subject': subject,
+                'html_template': html,
+                'is_active': True,
+            }
+        )
+        if created:
+            print(f"  ✓ Plantilla: {subject}")
+    
+    print(f"✅ {len(templates_data)} plantillas de notificaciones creadas\n")
+
+
+def create_notification_settings():
+    """Crear configuración de notificaciones"""
+    print("⚙️  Creando configuración de notificaciones...")
+    
+    # Singleton - solo una configuración
+    if not NotificationSettings.objects.exists():
+        settings = NotificationSettings.objects.create(
+            resend_api_key='',  # Se configura después
+            from_email='noreply@boutique.com',
+            from_name='Boutique La Paz',
+            admin_email='admin@boutique.com',
+            enable_order_confirmation=True,
+            enable_payment_notifications=True,
+            enable_low_stock_alerts=True,
+            enable_daily_reports=True,
+            low_stock_threshold=10,
+        )
+        print(f"  ✓ Configuración de notificaciones creada")
+    else:
+        print(f"  ℹ️  Configuración de notificaciones ya existe")
+    
+    print("✅ Configuración de notificaciones lista\n")
+
+
+def create_orders(products, users, payment_methods, shipping_methods):
     """Crear órdenes de prueba"""
     print("🛒 Creando órdenes...")
     
@@ -875,12 +1245,21 @@ def create_orders(products, users, payment_methods):
             variant.stock_quantity = max(0, variant.stock_quantity - quantity)
             variant.save()
         
+        # Seleccionar método de envío
+        if order_type == 'in_store':
+            # Para ventas en tienda, usar retiro en tienda
+            shipping_method = list(shipping_methods.values())[0]  # Retiro en Tienda
+        else:
+            # Para ventas online, elegir envío aleatorio
+            shipping_method = random.choice(list(shipping_methods.values())[1:])  # Cualquier envío a domicilio
+        
         # Calcular totales
         tax_rate = Decimal('0.13')  # 13% de impuesto
         tax_amount = subtotal * tax_rate
-        shipping_cost = Decimal('0.00') if order_type == 'in_store' else Decimal('30.00')
+        shipping_cost = shipping_method.cost
         total_amount = subtotal + tax_amount + shipping_cost
         
+        order.shipping_method = shipping_method
         order.subtotal = subtotal
         order.tax_amount = tax_amount
         order.shipping_cost = shipping_cost
@@ -932,16 +1311,43 @@ def main():
     
     # Ejecutar en orden
     clear_data()
+    
+    # Permisos y roles
     permissions = create_permissions()
     roles = create_roles(permissions)
+    
+    # Usuarios
     users = create_users(roles)
+    
+    # Estructura organizacional
+    departments = create_departments()
+    positions = create_positions(departments)
+    employees = create_employees(users, departments, positions)
+    
+    # Productos
     categories = create_categories()
     brands = create_brands()
     sizes = create_sizes()
     colors = create_colors()
     products = create_products(categories, brands, sizes, colors, users)
+    
+    # Proveedores
+    suppliers = create_suppliers()
+    create_product_suppliers(products, suppliers)
+    
+    # Métodos de pago y envío
     payment_methods = create_payment_methods()
-    orders = create_orders(products, users, payment_methods)
+    shipping_methods = create_shipping_methods()
+    
+    # Finanzas
+    expense_categories = create_expense_categories()
+    
+    # Notificaciones
+    create_notification_templates()
+    create_notification_settings()
+    
+    # Órdenes
+    orders = create_orders(products, users, payment_methods, shipping_methods)
     
     print()
     print("=" * 60)
@@ -961,13 +1367,21 @@ def main():
     print(f"  • Permisos: {Permission.objects.count()}")
     print(f"  • Roles: {Role.objects.count()}")
     print(f"  • Usuarios: {User.objects.count()}")
+    print(f"  • Departamentos: {Department.objects.count()}")
+    print(f"  • Puestos: {Position.objects.count()}")
+    print(f"  • Empleados: {Employee.objects.count()}")
     print(f"  • Categorías: {Category.objects.count()}")
     print(f"  • Marcas: {Brand.objects.count()}")
     print(f"  • Tallas: {Size.objects.count()}")
     print(f"  • Colores: {Color.objects.count()}")
     print(f"  • Productos: {Product.objects.count()}")
     print(f"  • Variantes: {ProductVariant.objects.count()}")
+    print(f"  • Proveedores: {Supplier.objects.count()}")
+    print(f"  • Relaciones Producto-Proveedor: {ProductSupplier.objects.count()}")
     print(f"  • Métodos de Pago: {PaymentMethod.objects.count()}")
+    print(f"  • Métodos de Envío: {ShippingMethod.objects.count()}")
+    print(f"  • Categorías de Gastos: {ExpenseCategory.objects.count()}")
+    print(f"  • Plantillas de Notificaciones: {NotificationTemplate.objects.count()}")
     print(f"  • Órdenes: {Order.objects.count()}")
     print(f"  • Facturas: {Invoice.objects.count()}")
     print()

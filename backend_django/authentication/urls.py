@@ -1,7 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
-from .views import AuthViewSet, UserViewSet, CustomTokenObtainPairView, login_view, register_view, me_view
+from .views import (
+    AuthViewSet, UserViewSet, CustomTokenObtainPairView, login_view, register_view, me_view,
+    # Nuevas vistas para gestión de usuarios
+    get_customers, get_staff_users, get_user_details, toggle_user_status,
+    create_staff_user, update_staff_user, assign_user_permissions
+)
 from .views_dashboard import users_this_month_view
 from .oauth_views import google_login_callback, google_oauth_url
 
@@ -21,31 +26,51 @@ urlpatterns = [
     path('login/', login_view, name='api_login'),
     path('register/', register_view, name='api_register'),
 
-  # --- NEW ENDPOINT: /api/auth/users-this-month/ ---
-  path('users-this-month/', users_this_month_view, name='api_users_this_month'),
-    
-    # Include ViewSet URLs
-    path('', include(router.urls)),
-    
+    # --- NEW ENDPOINT: /api/auth/users-this-month/ ---
+    path('users-this-month/', users_this_month_view, name='api_users_this_month'),
+
+  
+
     # JWT token endpoints
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    
+
     # Google OAuth endpoints
     path('auth/google/', google_login_callback, name='google_login'),
     path('auth/google/url/', google_oauth_url, name='google_oauth_url'),
-    
-      # 🔥 NUEVO: Agregar esta línea para el registro
+
+    # 🔥 NUEVO: Agregar esta línea para el registro
     # path('auth/register/', AuthViewSet.as_view({'post': 'register'}), name='auth-register'),
     # path('auth/login/', AuthViewSet.as_view({'post': 'login'}), name='auth-login'),
     # path('auth/profile/', AuthViewSet.as_view({'get': 'login'}), name='auth-get'),
 
-  # --- NEW ENDPOINT: /api/auth/me/ ---
-  path('me/', me_view, name='api_me'),
+    # --- NEW ENDPOINT: /api/auth/me/ ---
+    path('me/', me_view, name='api_me'),
+
+    # ========================================
+    # GESTIÓN DE USUARIOS - ADMIN
+    # ========================================
+
+    # Gestión de clientes
+    path('customers/', get_customers, name='get_customers'),
+    path('users/<int:user_id>/details/',
+         get_user_details, name='get_user_details'),
+
+    # Gestión de staff
+    path('staff/', get_staff_users, name='get_staff_users'),
+    path('users/create/', create_staff_user, name='create_staff_user'),
+    path('users/<int:user_id>/update/',
+         update_staff_user, name='update_staff_user'),
+    path('users/<int:user_id>/toggle-status/',
+         toggle_user_status, name='toggle_user_status'),
+    path('users/<int:user_id>/permissions/',
+         assign_user_permissions, name='assign_user_permissions'),
     
-    
+      # Include ViewSet URLs
+    path('', include(router.urls)),
+
 ]
-# para ver las rutas que se han creado  
+# para ver las rutas que se han creado
 # # python manage.py show_urls
 # http://localhost:8000/api/
 
@@ -55,7 +80,7 @@ urlpatterns = [
 # POST   /api/auth/register/             - Register new user
 # POST   /api/auth/login/                - Login user
 # POST   /api/auth/logout/               - Logout user
-# PUT    /api/auth/update_profile/       - Update user profile  
+# PUT    /api/auth/update_profile/       - Update user profile
 # PATCH  /api/auth/update_profile/       - Partial update user profile
 # POST   /api/auth/change_password/      - Change password
 #
@@ -63,7 +88,7 @@ urlpatterns = [
 # POST   /api/auth/password_reset_request/    - Request password reset
 # POST   /api/auth/password_reset_confirm/    - Confirm password reset
 #
-# Email Verification  
+# Email Verification
 # POST   /api/auth/verify_email/              - Verify email with token
 # POST   /api/auth/resend_email_verification/ - Resend verification email
 #

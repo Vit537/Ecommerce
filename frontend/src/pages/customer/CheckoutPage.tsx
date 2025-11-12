@@ -2,13 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { Elements } from '@stripe/react-stripe-js';
 import PaymentMethodSelector from '../../components/customer/Checkout/PaymentMethodSelector';
 import ShippingMethodSelector from '../../components/customer/Checkout/ShippingMethodSelector';
 import AddressForm from '../../components/customer/Checkout/AddressForm';
 import OrderSummary from '../../components/customer/Checkout/OrderSummary';
-import { ShippingAddress, ShippingMethod } from '../../services/paymentService';
+import OrderReview from '../../components/customer/Checkout/OrderReview';
+import StripeCheckoutForm from '../../components/customer/Checkout/StripeCheckoutForm';
+import { ShippingAddress, ShippingMethod, PaymentMethod } from '../../services/paymentService';
 import { checkoutService, CheckoutData } from '../../services/checkoutService';
 import { cartService } from '../../services/cartService';
+import { stripePaymentService, getStripe } from '../../services/stripePaymentService';
+import { qrPaymentService } from '../../services/qrPaymentService';
+import QRPaymentDisplay from '../../components/customer/Checkout/QRPaymentDisplay';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -27,8 +33,24 @@ const CheckoutPage: React.FC = () => {
   const [shippingMethodId, setShippingMethodId] = useState<string | null>(null);
   const [selectedShippingMethod, setSelectedShippingMethod] = useState<ShippingMethod | null>(null);
   const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
   const [shippingAddress, setShippingAddress] = useState<Partial<ShippingAddress>>({});
   const [needsAddress, setNeedsAddress] = useState(false);
+
+  // Stripe states
+  const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [showStripeForm, setShowStripeForm] = useState(false);
+
+  // QR Payment states
+  const [showQRPayment, setShowQRPayment] = useState(false);
+  const [qrPaymentData, setQRPaymentData] = useState<{
+    paymentId: string;
+    orderId: string;
+    orderNumber: string;
+    qrImageUrl: string;
+    amount: number;
+  } | null>(null);
 
   useEffect(() => {
     loadCartData();
@@ -81,7 +103,7 @@ const CheckoutPage: React.FC = () => {
   };
 
   const handlePlaceOrder = async () => {
-    if (!shippingMethodId || !paymentMethodId) return;
+    if (!shippingMethodId || !paymentMethodId || !selectedPaymentMethod) return;
 
     setLoading(true);
     try {
@@ -102,18 +124,104 @@ const CheckoutPage: React.FC = () => {
         return;
       }
 
-      const order = await checkoutService.createOrder(checkoutData);
-      setOrderSuccess(true);
+      // Obtener items del carrito y userId
+      const cart = await cartService.getCart();
+      const userId = cart.user || '';
+      const mappedOrder = checkoutService.mapCheckoutData(checkoutData, cart.items, userId);
+
+      // Crear la orden
+      const order = await checkoutService.createOrder(mappedOrder);
       
-      setTimeout(() => {
-        navigate('/orders');
-      }, 3000);
+      setCreatedOrderId(order.id);
+
+      // Determinar flujo según método de pago
+      const paymentType = selectedPaymentMethod.payment_type;
+
+      if (paymentType === 'stripe') {
+        // FLUJO STRIPE: Crear Payment Intent y redirigir a formulario
+        const paymentIntent = await stripePaymentService.createPaymentIntent({
+          amount: total,
+          order_id: order.id,
+          currency: 'usd',
+        });
+
+        console.log('Stripe Payment Intent created:', paymentIntent);
+        setStripeClientSecret(paymentIntent.client_secret);
+        setShowStripeForm(true);
+        setLoading(false);
+      } else if (paymentType === 'qr_code') {
+        // FLUJO QR: Crear pago QR y mostrar código
+        const qrPayment = await qrPaymentService.createQRPayment(order.id);
+        setQRPaymentData({
+          paymentId: qrPayment.payment_id,
+          orderId: qrPayment.order_id,
+          orderNumber: qrPayment.order_number,
+          qrImageUrl: qrPayment.qr_image_url,
+          amount: qrPayment.amount,
+        });
+        setShowQRPayment(true);
+        setLoading(false);
+      } else if (paymentType === 'cash') {
+        // FLUJO EFECTIVO: Marcar como pendiente y confirmar
+        setOrderSuccess(true);
+        setLoading(false);
+        setTimeout(() => {
+          navigate('/shop');
+        }, 3000);
+      } else {
+        // Otros métodos de pago
+        setOrderSuccess(true);
+        setLoading(false);
+        setTimeout(() => {
+          navigate('/shop');
+        }, 3000);
+      }
     } catch (error: any) {
       console.error('Error creating order:', error);
       alert(error.response?.data?.error || 'Error al procesar la orden');
+      setLoading(false);
+    }
+  };
+
+  const handleStripePaymentSuccess = () => {
+    setShowStripeForm(false);
+    setOrderSuccess(true);
+    setTimeout(() => {
+      navigate('/shop');
+    }, 3000);
+  };
+
+  const handleStripePaymentError = (error: string) => {
+    alert(`Error en el pago: ${error}`);
+    setShowStripeForm(false);
+  };
+
+  const handleQRPaymentConfirm = async () => {
+    if (!qrPaymentData) return;
+
+    setLoading(true);
+    try {
+      await qrPaymentService.confirmQRPayment(
+        qrPaymentData.paymentId,
+        qrPaymentData.orderId
+      );
+      setShowQRPayment(false);
+      setOrderSuccess(true);
+      setTimeout(() => {
+        navigate('/shop');
+      }, 3000);
+    } catch (error: any) {
+      console.error('Error confirming QR payment:', error);
+      alert(error.response?.data?.error || 'Error al confirmar el pago');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleQRPaymentCancel = () => {
+    setShowQRPayment(false);
+    setQRPaymentData(null);
+    setStep(2); // Volver a selección de pago
   };
 
   const shippingCost = selectedShippingMethod ? parseFloat(selectedShippingMethod.cost) : 0;
@@ -266,7 +374,10 @@ const CheckoutPage: React.FC = () => {
               <div className="bg-white rounded-lg border border-gray-300 p-6">
                 <PaymentMethodSelector
                   selectedMethodId={paymentMethodId}
-                  onSelectMethod={setPaymentMethodId}
+                  onSelectMethod={(methodId, method) => {
+                    setPaymentMethodId(methodId);
+                    setSelectedPaymentMethod(method);
+                  }}
                 />
 
                 {step === 2 && (
@@ -299,16 +410,15 @@ const CheckoutPage: React.FC = () => {
             )}
 
             {/* Step 3: Review & Place Order */}
-            {step === 3 && (
+            {step === 3 && !showStripeForm && (
               <div className="bg-white rounded-lg border border-gray-300 p-6">
-                <h3 className="text-lg font-semibold text-black mb-4 uppercase tracking-wider">
-                  Revisar y Confirmar
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Por favor revisa tu orden antes de confirmar la compra.
-                </p>
+                <OrderReview
+                  shippingMethod={selectedShippingMethod}
+                  paymentMethodId={paymentMethodId}
+                  shippingAddress={needsAddress ? shippingAddress : undefined}
+                />
 
-                <div className="flex gap-4">
+                <div className="mt-6 flex gap-4">
                   <button
                     onClick={() => setStep(2)}
                     className="
@@ -333,6 +443,28 @@ const CheckoutPage: React.FC = () => {
                   </button>
                 </div>
               </div>
+            )}
+
+            {/* Step 3: Stripe Payment Form */}
+            {step === 3 && showStripeForm && stripeClientSecret && (
+              <Elements stripe={getStripe()} options={{ clientSecret: stripeClientSecret }}>
+                <StripeCheckoutForm
+                  amount={total}
+                  onSuccess={handleStripePaymentSuccess}
+                  onError={handleStripePaymentError}
+                />
+              </Elements>
+            )}
+
+            {/* Step 3: QR Payment Display */}
+            {step === 3 && showQRPayment && qrPaymentData && (
+              <QRPaymentDisplay
+                qrImageUrl={qrPaymentData.qrImageUrl}
+                amount={qrPaymentData.amount}
+                orderId={qrPaymentData.orderNumber}
+                onConfirmPayment={handleQRPaymentConfirm}
+                onCancel={handleQRPaymentCancel}
+              />
             )}
           </div>
 

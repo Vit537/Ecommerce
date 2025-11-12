@@ -60,6 +60,7 @@ const ProductsManagementGrid: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Formulario
@@ -73,6 +74,10 @@ const ProductsManagementGrid: React.FC = () => {
     is_featured: false,
     is_active: true,
   });
+
+  // Estado para imágenes
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreview, setImagePreview] = useState<string[]>([]);
 
   // Paginación
   const [totalPages, setTotalPages] = useState(1);
@@ -275,6 +280,38 @@ const ProductsManagementGrid: React.FC = () => {
       is_active: true,
     });
     setSelectedProduct(null);
+    setSelectedImages([]);
+    setImagePreview([]);
+  };
+
+  // Manejar selección de imágenes
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const filesArray = Array.from(files);
+      setSelectedImages(filesArray);
+      
+      // Generar previsualizaciones
+      const previews: string[] = [];
+      filesArray.forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          previews.push(reader.result as string);
+          if (previews.length === filesArray.length) {
+            setImagePreview(previews);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  // Remover imagen seleccionada
+  const removeImage = (index: number) => {
+    const newImages = selectedImages.filter((_, i) => i !== index);
+    const newPreviews = imagePreview.filter((_, i) => i !== index);
+    setSelectedImages(newImages);
+    setImagePreview(newPreviews);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -284,7 +321,23 @@ const ProductsManagementGrid: React.FC = () => {
 
     try {
       console.log('🔄 [ProductsGrid] Creating product:', formData);
-      await productService.createProduct(formData);
+      
+      // Crear FormData para enviar con imágenes
+      const submitData = new FormData();
+      
+      // Agregar campos del formulario
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== '' && value !== null && value !== undefined) {
+          submitData.append(key, value.toString());
+        }
+      });
+      
+      // Agregar imágenes
+      selectedImages.forEach((image) => {
+        submitData.append('images', image);
+      });
+      
+      await productService.createProductWithImages(submitData);
       setSuccess('Producto creado exitosamente');
       setShowCreateModal(false);
       resetForm();
@@ -307,7 +360,25 @@ const ProductsManagementGrid: React.FC = () => {
 
     try {
       console.log('🔄 [ProductsGrid] Updating product:', selectedProduct.id, formData);
-      await productService.updateProduct(selectedProduct.id, formData);
+      
+      // Crear FormData para enviar con imágenes
+      const submitData = new FormData();
+      
+      // Agregar campos del formulario
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== '' && value !== null && value !== undefined) {
+          submitData.append(key, value.toString());
+        }
+      });
+      
+      // Agregar imágenes nuevas si las hay
+      if (selectedImages.length > 0) {
+        selectedImages.forEach((image) => {
+          submitData.append('images', image);
+        });
+      }
+      
+      await productService.updateProductWithImages(selectedProduct.id, submitData);
       setSuccess('Producto actualizado exitosamente');
       setShowEditModal(false);
       resetForm();
@@ -327,6 +398,11 @@ const ProductsManagementGrid: React.FC = () => {
   const openDeleteModal = (product: Product) => {
     setSelectedProduct(product);
     setShowDeleteModal(true);
+  };
+
+  const openDetailModal = (product: Product) => {
+    setSelectedProduct(product);
+    setShowDetailModal(true);
   };
 
   const openEditModal = (product: Product) => {
@@ -648,6 +724,13 @@ const ProductsManagementGrid: React.FC = () => {
                       <Star
                         className={`w-4 h-4 ${product.is_featured ? "fill-accent text-accent" : ""}`}
                       />
+                    </button>
+                    <button
+                      onClick={() => openDetailModal(product)}
+                      className="p-2 bg-white rounded-lg shadow-md hover:bg-blue-500 hover:text-white transition-colors"
+                      title="Ver Detalles"
+                    >
+                      <Eye className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => openEditModal(product)}
@@ -1066,6 +1149,55 @@ const ProductsManagementGrid: React.FC = () => {
                 />
               </div>
 
+              {/* Campo de imágenes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Imágenes del Producto
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-gray-400 transition-colors">
+                  <div className="flex flex-col items-center">
+                    <Upload className="w-12 h-12 text-gray-400 mb-3" />
+                    <label className="cursor-pointer">
+                      <span className="text-sm text-gray-600 hover:text-gray-800">
+                        Haz clic para seleccionar imágenes
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-xs text-gray-500 mt-2">
+                      PNG, JPG, JPEG hasta 10MB (se convertirán a WebP automáticamente)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Previsualizaciones */}
+                {imagePreview.length > 0 && (
+                  <div className="mt-4 grid grid-cols-3 gap-4">
+                    {imagePreview.map((preview, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
@@ -1230,6 +1362,78 @@ const ProductsManagementGrid: React.FC = () => {
                 />
               </div>
 
+              {/* Imágenes actuales */}
+              {selectedProduct && selectedProduct.images && selectedProduct.images.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Imágenes Actuales
+                  </label>
+                  <div className="grid grid-cols-3 gap-4">
+                    {selectedProduct.images.map((image, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={image}
+                          alt={`Imagen ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://via.placeholder.com/150?text=Sin+Imagen';
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Campo de nuevas imágenes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nuevas Imágenes (Opcional)
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-gray-400 transition-colors">
+                  <div className="flex flex-col items-center">
+                    <Upload className="w-12 h-12 text-gray-400 mb-3" />
+                    <label className="cursor-pointer">
+                      <span className="text-sm text-gray-600 hover:text-gray-800">
+                        Haz clic para seleccionar nuevas imágenes
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Las nuevas imágenes reemplazarán las actuales
+                    </p>
+                  </div>
+                </div>
+
+                {/* Previsualizaciones de nuevas imágenes */}
+                {imagePreview.length > 0 && (
+                  <div className="mt-4 grid grid-cols-3 gap-4">
+                    {imagePreview.map((preview, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
@@ -1253,6 +1457,283 @@ const ProductsManagementGrid: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Product Modal */}
+      {showDetailModal && selectedProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Eye className="w-6 h-6" />
+                Detalles del Producto
+              </h2>
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Imágenes del producto */}
+              {selectedProduct.images && selectedProduct.images.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                    Imágenes
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {selectedProduct.images.map((image, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={image}
+                          alt={`${selectedProduct.name} - Imagen ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://via.placeholder.com/150?text=Sin+Imagen';
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Información básica */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                    Información General
+                  </h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Nombre</p>
+                      <p className="text-sm font-medium text-gray-900">{selectedProduct.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Categoría</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {selectedProduct.category?.name || 'Sin categoría'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Marca</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {selectedProduct.brand?.name || 'Sin marca'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Descripción</p>
+                      <p className="text-sm text-gray-700">
+                        {selectedProduct.description || 'Sin descripción'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                    Precios y Estado
+                  </h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Precio Actual</p>
+                      <p className="text-lg font-bold text-gray-900">
+                        ${parseFloat(selectedProduct.price || '0').toFixed(2)}
+                      </p>
+                    </div>
+                    {selectedProduct.compare_at_price && parseFloat(selectedProduct.compare_at_price) > 0 && (
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase">Precio de Comparación</p>
+                        <p className="text-sm text-gray-600 line-through">
+                          ${parseFloat(selectedProduct.compare_at_price).toFixed(2)}
+                        </p>
+                        {selectedProduct.discount_percentage && selectedProduct.discount_percentage > 0 && (
+                          <p className="text-sm font-semibold text-green-600">
+                            {selectedProduct.discount_percentage}% de descuento
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Stock Total</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {selectedProduct.total_stock || 0} unidades
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {selectedProduct.is_featured && (
+                        <span className="px-3 py-1 bg-accent bg-opacity-10 text-accent text-xs font-semibold rounded-full">
+                          DESTACADO
+                        </span>
+                      )}
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                        selectedProduct.is_active
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedProduct.is_active ? 'ACTIVO' : 'INACTIVO'}
+                      </span>
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                        selectedProduct.is_in_stock
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {selectedProduct.is_in_stock ? 'EN STOCK' : 'AGOTADO'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Variantes */}
+              {selectedProduct.variants && selectedProduct.variants.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                    Variantes ({selectedProduct.variants.length})
+                  </h3>
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Talla</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Color</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Stock</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Precio</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {selectedProduct.variants.map((variant) => (
+                          <tr key={variant.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-900">
+                              {variant.size?.name || 'N/A'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900">
+                              <div className="flex items-center gap-2">
+                                {variant.color?.hex_code && (
+                                  <div
+                                    className="w-5 h-5 rounded-full border border-gray-300"
+                                    style={{ backgroundColor: variant.color.hex_code }}
+                                  />
+                                )}
+                                {variant.color?.name || 'N/A'}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900">
+                              {variant.available_stock || 0}
+                              {variant.needs_restock && (
+                                <span className="ml-2 text-xs text-orange-600 font-semibold">
+                                  ⚠ Bajo
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                              ${parseFloat(variant.final_price?.toString() || '0').toFixed(2)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                variant.is_active
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {variant.is_active ? 'Activo' : 'Inactivo'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Tallas y Colores disponibles */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {selectedProduct.sizes && selectedProduct.sizes.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                      Tallas Disponibles
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProduct.sizes.map((size) => (
+                        <span
+                          key={size.id}
+                          className="px-3 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-lg"
+                        >
+                          {size.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selectedProduct.colors && selectedProduct.colors.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                      Colores Disponibles
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProduct.colors.map((color) => (
+                        <div
+                          key={color.id}
+                          className="flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-lg"
+                        >
+                          {color.hex_code && (
+                            <div
+                              className="w-4 h-4 rounded-full border border-gray-300"
+                              style={{ backgroundColor: color.hex_code }}
+                            />
+                          )}
+                          {color.name}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Fechas */}
+              <div className="border-t border-gray-200 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-500">
+                  <div>
+                    <span className="font-medium">Creado:</span>{' '}
+                    {selectedProduct.created_at
+                      ? new Date(selectedProduct.created_at).toLocaleString('es-ES')
+                      : 'N/A'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Actualizado:</span>{' '}
+                    {selectedProduct.updated_at
+                      ? new Date(selectedProduct.updated_at).toLocaleString('es-ES')
+                      : 'N/A'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="btn-secondary"
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    openEditModal(selectedProduct);
+                  }}
+                  className="btn-primary flex items-center gap-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Editar Producto
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

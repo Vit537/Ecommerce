@@ -13,9 +13,12 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 django.setup()
 
 from django.contrib.auth import get_user_model
-from products.models import Product, ProductVariant, Category, Brand, Size, Color
-from orders.models import Order, OrderItem, PaymentMethod
-from datetime import datetime, timedelta
+from products.models import Product, ProductVariant, Category, Brand, Size, Color, Supplier
+from orders.models import (Order, OrderItem, PaymentMethod, Payment, Invoice, 
+                            PurchaseOrder, PurchaseOrderItem, StockMovement)
+from employees.models import Employee, Shift
+from finance.models import Expense, ExpenseCategory, Transaction
+from datetime import datetime, timedelta, date
 from django.utils import timezone
 import random
 from decimal import Decimal
@@ -445,10 +448,515 @@ def generate_ml_training_data():
     print("\n")
 
 
+def generate_purchase_orders():
+    """Generar órdenes de compra a proveedores"""
+    print("=" * 80)
+    print("📦 GENERANDO ÓRDENES DE COMPRA A PROVEEDORES")
+    print("=" * 80)
+    
+    suppliers = list(Supplier.objects.filter(is_active=True))
+    if not suppliers:
+        print("\n⚠️  No hay proveedores. Saltando generación de órdenes de compra.")
+        return
+    
+    products = list(Product.objects.filter(status='active'))
+    employees = list(User.objects.filter(role__in=['admin', 'manager']))
+    
+    if not employees:
+        print("\n⚠️  No hay empleados para crear órdenes de compra.")
+        return
+    
+    # Generar 15-25 órdenes de compra en los últimos 6 meses
+    num_pos = random.randint(15, 25)
+    start_date = timezone.now() - timedelta(days=180)
+    end_date = timezone.now() - timedelta(days=7)  # Hasta hace una semana
+    
+    print(f"\n📝 Generando {num_pos} órdenes de compra...")
+    
+    for i in range(num_pos):
+        # Fecha aleatoria
+        days_ago = random.randint(7, 180)
+        order_date = (timezone.now() - timedelta(days=days_ago)).date()
+        
+        # Seleccionar proveedor
+        supplier = random.choice(suppliers)
+        
+        # Estado basado en antigüedad
+        if days_ago > 30:
+            status = 'received'
+        elif days_ago > 14:
+            status = random.choice(['received', 'partially_received'])
+        else:
+            status = random.choice(['confirmed', 'sent'])
+        
+        # Crear orden de compra
+        po = PurchaseOrder.objects.create(
+            supplier=supplier,
+            status=status,
+            order_date=order_date,
+            expected_delivery_date=order_date + timedelta(days=random.choice([7, 14, 21, 30])),
+            created_by=random.choice(employees),
+            notes=f'Orden de compra generada automáticamente',
+        )
+        
+        # Agregar items (3-8 productos)
+        num_items = random.randint(3, 8)
+        selected_products = random.sample(products, min(num_items, len(products)))
+        
+        po_subtotal = Decimal('0.00')
+        
+        for product in selected_products:
+            variants = list(product.variants.filter(is_active=True))
+            if not variants:
+                continue
+            
+            variant = random.choice(variants)
+            
+            # Cantidad de compra (mayor que ventas)
+            quantity_ordered = random.choice([20, 30, 50, 100])
+            
+            # Costo unitario (70-85% del precio de venta)
+            unit_cost = product.cost_price or (product.price * Decimal(random.uniform(0.70, 0.85)))
+            
+            # Cantidad recibida
+            if status == 'received':
+                quantity_received = quantity_ordered
+            elif status == 'partially_received':
+                quantity_received = random.randint(int(quantity_ordered * 0.3), int(quantity_ordered * 0.8))
+            else:
+                quantity_received = 0
+            
+            PurchaseOrderItem.objects.create(
+                purchase_order=po,
+                product=product,
+                product_variant=variant,
+                quantity_ordered=quantity_ordered,
+                quantity_received=quantity_received,
+                unit_cost=unit_cost,
+            )
+            
+            po_subtotal += quantity_ordered * unit_cost
+            
+            # Si se recibió mercadería, actualizar stock y crear movimiento
+            if quantity_received > 0:
+                previous_stock = variant.stock_quantity
+                variant.stock_quantity += quantity_received
+                variant.save()
+                
+                StockMovement.objects.create(
+                    product_variant=variant,
+                    movement_type='purchase',
+                    quantity=quantity_received,
+                    previous_stock=previous_stock,
+                    new_stock=variant.stock_quantity,
+                    purchase_order=po,
+                    reference_number=po.po_number,
+                    notes=f'Recepción de mercadería de {supplier.name}',
+                    created_by=random.choice(employees),
+                    created_at=timezone.make_aware(datetime.combine(order_date, datetime.min.time())) + timedelta(days=random.randint(7, 14)),
+                )
+        
+        # Calcular totales
+        tax_rate = Decimal('0.13')
+        po.subtotal = po_subtotal
+        po.tax_amount = po_subtotal * tax_rate
+        po.total_amount = po_subtotal + po.tax_amount
+        po.save()
+        
+        if (i + 1) % 5 == 0:
+            print(f"   Progreso: {i + 1}/{num_pos} órdenes de compra creadas...")
+    
+    print(f"✅ {num_pos} órdenes de compra generadas\n")
+
+
+def generate_stock_movements():
+    """Generar movimientos de inventario adicionales (ajustes, pérdidas, etc.)"""
+    print("=" * 80)
+    print("📊 GENERANDO MOVIMIENTOS DE INVENTARIO")
+    print("=" * 80)
+    
+    variants = list(ProductVariant.objects.filter(is_active=True))
+    employees = list(User.objects.filter(role__in=['admin', 'manager', 'employee']))
+    
+    if not employees:
+        print("\n⚠️  No hay empleados. Saltando movimientos de inventario.")
+        return
+    
+    # Generar 20-40 movimientos de ajuste en los últimos 6 meses
+    num_movements = random.randint(20, 40)
+    
+    print(f"\n📝 Generando {num_movements} movimientos de inventario...")
+    
+    movement_types = [
+        ('adjustment', 'Ajuste de inventario por conteo físico'),
+        ('damaged', 'Mercadería dañada'),
+        ('lost', 'Pérdida de mercadería'),
+        ('return', 'Devolución de cliente'),
+    ]
+    
+    for i in range(num_movements):
+        variant = random.choice(variants)
+        movement_type, default_note = random.choice(movement_types)
+        
+        # Fecha aleatoria (últimos 6 meses)
+        days_ago = random.randint(1, 180)
+        movement_date = timezone.now() - timedelta(days=days_ago)
+        
+        # Cantidad del movimiento
+        if movement_type == 'return':
+            # Devoluciones son positivas (aumentan stock)
+            quantity = random.randint(1, 3)
+        else:
+            # Ajustes, daños, pérdidas son negativos
+            quantity = -random.randint(1, 10)
+        
+        previous_stock = variant.stock_quantity
+        new_stock = max(0, previous_stock + quantity)
+        
+        # Ajustar el stock real
+        variant.stock_quantity = new_stock
+        variant.save()
+        
+        StockMovement.objects.create(
+            product_variant=variant,
+            movement_type=movement_type,
+            quantity=quantity,
+            previous_stock=previous_stock,
+            new_stock=new_stock,
+            reference_number=f'MOV-{random.randint(1000, 9999)}',
+            notes=default_note,
+            created_by=random.choice(employees),
+            created_at=movement_date,
+        )
+    
+    print(f"✅ {num_movements} movimientos de inventario generados\n")
+
+
+def generate_shifts():
+    """Generar turnos de cajero"""
+    print("=" * 80)
+    print("⏰ GENERANDO TURNOS DE CAJERO")
+    print("=" * 80)
+    
+    # Obtener cajeros/empleados
+    cashiers = list(User.objects.filter(role__in=['employee', 'manager']))
+    
+    if not cashiers:
+        print("\n⚠️  No hay cajeros. Saltando generación de turnos.")
+        return
+    
+    # Obtener empleados para cerrar turnos
+    try:
+        employees = list(Employee.objects.filter(employment_status='active'))
+    except:
+        employees = []
+    
+    # Generar turnos para los últimos 60 días
+    start_date = timezone.now() - timedelta(days=60)
+    end_date = timezone.now()
+    
+    current_date = start_date
+    shifts_created = 0
+    
+    print(f"\n📝 Generando turnos...")
+    
+    while current_date <= end_date:
+        # Solo días laborables (lunes a sábado)
+        if current_date.weekday() < 6:
+            # 2-3 turnos por día
+            num_shifts = random.randint(2, 3)
+            
+            for shift_num in range(num_shifts):
+                cashier = random.choice(cashiers)
+                
+                # Horarios de turno
+                if shift_num == 0:
+                    # Turno mañana: 9:00 - 14:00
+                    start_hour, end_hour = 9, 14
+                elif shift_num == 1:
+                    # Turno tarde: 14:00 - 19:00
+                    start_hour, end_hour = 14, 19
+                else:
+                    # Turno completo: 9:00 - 19:00
+                    start_hour, end_hour = 9, 19
+                
+                start_time = current_date.replace(hour=start_hour, minute=0, second=0)
+                end_time = current_date.replace(hour=end_hour, minute=0, second=0)
+                
+                # Efectivo inicial
+                initial_cash = Decimal(random.choice(['500.00', '1000.00', '1500.00']))
+                
+                # Calcular ventas del turno
+                shift_orders = Order.objects.filter(
+                    processed_by=cashier,
+                    order_type='in_store',
+                    created_at__gte=start_time,
+                    created_at__lte=end_time
+                )
+                
+                total_cash_sales = Decimal('0.00')
+                total_card_sales = Decimal('0.00')
+                total_qr_sales = Decimal('0.00')
+                sales_count = 0
+                
+                for order in shift_orders:
+                    sales_count += 1
+                    payments = Payment.objects.filter(order=order, status='completed')
+                    for payment in payments:
+                        if payment.payment_method.payment_type == 'cash':
+                            total_cash_sales += payment.amount
+                        elif payment.payment_method.payment_type in ['credit_card', 'debit_card']:
+                            total_card_sales += payment.amount
+                        elif payment.payment_method.payment_type in ['qr_code', 'mobile_payment']:
+                            total_qr_sales += payment.amount
+                
+                total_sales = total_cash_sales + total_card_sales + total_qr_sales
+                expected_cash = initial_cash + total_cash_sales
+                
+                # Efectivo final (con pequeña variación ±50)
+                final_cash = expected_cash + Decimal(random.uniform(-50, 50))
+                difference = final_cash - expected_cash
+                
+                shift = Shift.objects.create(
+                    cashier=cashier,
+                    employee=employees[0] if employees and hasattr(cashier, 'employee_profile') else None,
+                    start_time=start_time,
+                    end_time=end_time,
+                    status='closed',
+                    initial_cash=initial_cash,
+                    final_cash=final_cash,
+                    expected_cash=expected_cash,
+                    difference=difference,
+                    sales_count=sales_count,
+                    total_cash_sales=total_cash_sales,
+                    total_card_sales=total_card_sales,
+                    total_qr_sales=total_qr_sales,
+                    total_sales=total_sales,
+                    closed_by=cashier,
+                )
+                
+                shifts_created += 1
+        
+        current_date += timedelta(days=1)
+        
+        if shifts_created % 50 == 0:
+            print(f"   Progreso: {shifts_created} turnos creados...")
+    
+    print(f"✅ {shifts_created} turnos generados\n")
+
+
+def generate_expenses():
+    """Generar gastos de la empresa"""
+    print("=" * 80)
+    print("💸 GENERANDO GASTOS DE LA EMPRESA")
+    print("=" * 80)
+    
+    categories = list(ExpenseCategory.objects.filter(is_active=True))
+    employees = list(User.objects.filter(role__in=['admin', 'manager']))
+    
+    if not categories:
+        print("\n⚠️  No hay categorías de gastos. Saltando generación de gastos.")
+        return
+    
+    if not employees:
+        print("\n⚠️  No hay empleados. Saltando generación de gastos.")
+        return
+    
+    # Generar gastos para los últimos 6 meses
+    start_date = date.today() - timedelta(days=180)
+    end_date = date.today()
+    
+    current_month = start_date.replace(day=1)
+    expenses_created = 0
+    
+    print(f"\n📝 Generando gastos...")
+    
+    while current_month <= end_date:
+        # Gastos fijos mensuales
+        fixed_categories = [cat for cat in categories if cat.category_type == 'fixed']
+        for category in fixed_categories:
+            # Determinar monto según categoría
+            if 'Alquiler' in category.name:
+                amount = Decimal(random.uniform(5000, 8000))
+                beneficiary = 'Propietarios del Local'
+            elif 'Salarios' in category.name:
+                amount = Decimal(random.uniform(15000, 25000))
+                beneficiary = 'Nómina de Empleados'
+            elif 'Servicios' in category.name:
+                amount = Decimal(random.uniform(800, 1500))
+                beneficiary = random.choice(['DELAPAZ', 'EPSAS', 'Entel', 'AXS Bolivia'])
+            elif 'Impuestos' in category.name:
+                amount = Decimal(random.uniform(2000, 5000))
+                beneficiary = 'Servicio de Impuestos Nacionales'
+            elif 'Seguros' in category.name:
+                amount = Decimal(random.uniform(500, 1000))
+                beneficiary = 'Seguros Bolivar'
+            else:
+                amount = Decimal(random.uniform(500, 2000))
+                beneficiary = 'Proveedor General'
+            
+            expense_date = current_month + timedelta(days=random.randint(1, 15))
+            
+            Expense.objects.create(
+                category=category,
+                description=f'{category.name} - {current_month.strftime("%B %Y")}',
+                amount=amount,
+                status='paid',
+                payment_method=random.choice(['bank_transfer', 'check', 'cash']),
+                beneficiary=beneficiary,
+                expense_date=expense_date,
+                paid_date=expense_date + timedelta(days=random.randint(0, 5)),
+                created_by=random.choice(employees),
+                paid_by=random.choice(employees),
+            )
+            expenses_created += 1
+        
+        # Gastos variables (2-5 por mes)
+        variable_categories = [cat for cat in categories if cat.category_type == 'variable']
+        num_variable = random.randint(2, 5)
+        
+        for _ in range(num_variable):
+            category = random.choice(variable_categories)
+            
+            if 'Marketing' in category.name:
+                amount = Decimal(random.uniform(500, 3000))
+                beneficiary = random.choice(['Facebook Ads', 'Google Ads', 'Agencia de Publicidad'])
+            elif 'Mantenimiento' in category.name:
+                amount = Decimal(random.uniform(200, 1500))
+                beneficiary = 'Servicios de Mantenimiento'
+            elif 'Transporte' in category.name:
+                amount = Decimal(random.uniform(300, 1000))
+                beneficiary = random.choice(['Transportes Rápidos', 'Courier Express'])
+            elif 'Suministros' in category.name:
+                amount = Decimal(random.uniform(100, 500))
+                beneficiary = 'Papelería Central'
+            else:
+                amount = Decimal(random.uniform(200, 2000))
+                beneficiary = 'Proveedor Varios'
+            
+            expense_date = current_month + timedelta(days=random.randint(1, 28))
+            
+            Expense.objects.create(
+                category=category,
+                description=f'{category.name} - {expense_date.strftime("%d/%m/%Y")}',
+                amount=amount,
+                status=random.choice(['paid', 'paid', 'paid', 'pending']),
+                payment_method=random.choice(['bank_transfer', 'cash', 'credit_card', 'debit_card']),
+                beneficiary=beneficiary,
+                expense_date=expense_date,
+                created_by=random.choice(employees),
+            )
+            expenses_created += 1
+        
+        # Avanzar al siguiente mes
+        if current_month.month == 12:
+            current_month = current_month.replace(year=current_month.year + 1, month=1)
+        else:
+            current_month = current_month.replace(month=current_month.month + 1)
+        
+        if expenses_created % 20 == 0:
+            print(f"   Progreso: {expenses_created} gastos creados...")
+    
+    print(f"✅ {expenses_created} gastos generados\n")
+
+
+def generate_transactions():
+    """Generar registro consolidado de transacciones"""
+    print("=" * 80)
+    print("💰 GENERANDO REGISTRO DE TRANSACCIONES")
+    print("=" * 80)
+    
+    print(f"\n📝 Consolidando transacciones...")
+    
+    # Limpiar transacciones existentes
+    Transaction.objects.all().delete()
+    
+    transactions_created = 0
+    
+    # 1. Transacciones de INGRESOS (desde órdenes pagadas)
+    orders = Order.objects.filter(payment_status='paid')
+    print(f"   Procesando {orders.count()} órdenes como ingresos...")
+    
+    for order in orders:
+        # Obtener el método de pago de la orden
+        payment = order.payments.first()
+        payment_method_name = payment.payment_method.name if payment and payment.payment_method else 'No especificado'
+        
+        Transaction.objects.create(
+            transaction_type='income',
+            channel='in_store' if order.order_type == 'in_store' else 'online',
+            amount=order.total_amount,
+            description=f'Venta - Orden {order.order_number}',
+            transaction_date=order.created_at,
+            order=order,
+            payment_method_name=payment_method_name,
+            created_by=order.user,
+        )
+        transactions_created += 1
+        
+        if transactions_created % 200 == 0:
+            print(f"      Progreso: {transactions_created} transacciones...")
+    
+    # 2. Transacciones de EGRESOS (desde gastos)
+    expenses = Expense.objects.filter(status='paid')
+    print(f"   Procesando {expenses.count()} gastos como egresos...")
+    
+    for expense in expenses:
+        Transaction.objects.create(
+            transaction_type='expense',
+            channel='administrative',
+            amount=expense.amount,
+            description=expense.description,
+            transaction_date=timezone.make_aware(datetime.combine(expense.expense_date, datetime.min.time())),
+            expense=expense,
+            expense_category=expense.category,
+            payment_method_name=expense.get_payment_method_display(),
+            created_by=expense.created_by,
+        )
+        transactions_created += 1
+        
+        if transactions_created % 200 == 0:
+            print(f"      Progreso: {transactions_created} transacciones...")
+    
+    print(f"✅ {transactions_created} transacciones consolidadas\n")
+
+
 if __name__ == '__main__':
     try:
         from django.db import models
+        
+        # 1. Generar ventas históricas y completar órdenes existentes
         generate_ml_training_data()
+        
+        # 2. Generar órdenes de compra a proveedores
+        generate_purchase_orders()
+        
+        # 3. Generar movimientos de inventario adicionales
+        generate_stock_movements()
+        
+        # 4. Generar turnos de cajero
+        generate_shifts()
+        
+        # 5. Generar gastos de la empresa
+        generate_expenses()
+        
+        # 6. Consolidar transacciones
+        generate_transactions()
+        
+        print("\n" + "=" * 80)
+        print("🎉 GENERACIÓN DE DATOS COMPLETA")
+        print("=" * 80)
+        print("\n📊 RESUMEN FINAL:")
+        print(f"   • Órdenes: {Order.objects.count()}")
+        print(f"   • Pagos: {Payment.objects.count()}")
+        print(f"   • Facturas: {Invoice.objects.count()}")
+        print(f"   • Órdenes de Compra: {PurchaseOrder.objects.count()}")
+        print(f"   • Movimientos de Stock: {StockMovement.objects.count()}")
+        print(f"   • Turnos: {Shift.objects.count()}")
+        print(f"   • Gastos: {Expense.objects.count()}")
+        print(f"   • Transacciones: {Transaction.objects.count()}")
+        print()
+        
     except Exception as e:
         print(f"\n❌ ERROR: {str(e)}")
         import traceback

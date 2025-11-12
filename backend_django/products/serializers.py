@@ -83,10 +83,39 @@ class ProductSerializer(serializers.ModelSerializer):
     variants = ProductVariantSerializer(many=True, read_only=True)
     total_stock = serializers.ReadOnlyField()
     is_in_stock = serializers.ReadOnlyField()
+    images = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
         fields = '__all__'
+    
+    def get_images(self, obj):
+        """
+        Convierte las URLs relativas de imágenes en URLs absolutas
+        """
+        request = self.context.get('request')
+        images = obj.images if obj.images else []
+        
+        if not images:
+            return []
+        
+        absolute_images = []
+        for img_url in images:
+            if img_url.startswith('http'):
+                # Ya es una URL absoluta (cloud storage)
+                absolute_images.append(img_url)
+            else:
+                # Es una URL relativa, convertir a absoluta
+                if request:
+                    absolute_images.append(request.build_absolute_uri(img_url))
+                else:
+                    # Fallback si no hay request en el contexto
+                    from django.conf import settings
+                    base_url = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost:8000'
+                    protocol = 'https' if not settings.DEBUG else 'http'
+                    absolute_images.append(f"{protocol}://{base_url}{img_url}")
+        
+        return absolute_images
 
 
 class ProductCreateUpdateSerializer(serializers.ModelSerializer):

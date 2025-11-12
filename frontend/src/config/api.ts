@@ -48,7 +48,7 @@ export const API_ENDPOINTS = {
   ORDERS: {
     LIST: '/orders/',
     DETAIL: (id: string) => `/orders/${id}/`,
-    CREATE: '/orders/',
+    CREATE: '/orders/orders/', // <-- Corregido para DRF router
     UPDATE: (id: string) => `/orders/${id}/`,
     CANCEL: (id: string) => `/orders/${id}/cancel/`,
     PROCESS: (id: string) => `/orders/${id}/process/`,
@@ -59,6 +59,8 @@ export const API_ENDPOINTS = {
     LIST: '/orders/payments/',
     CREATE: '/orders/payments/',
     METHODS: '/orders/payment-methods/',
+    CREATE_INTENT: '/orders/create-payment-intent/',  // Stripe
+    WEBHOOK: '/orders/stripe-webhook/',  // Stripe webhook
   },
   
   // Facturas
@@ -67,6 +69,7 @@ export const API_ENDPOINTS = {
     DETAIL: (id: string) => `/orders/invoices/${id}/`,
     GENERATE: '/orders/invoices/generate/',
     DOWNLOAD: (id: string) => `/orders/invoices/${id}/download/`,
+    ADMIN_LIST: '/orders/invoices/admin_list/',  // Endpoint para admin con filtros
   },
   
   // Usuarios
@@ -133,6 +136,27 @@ export const API_ENDPOINTS = {
     FEEDBACK: '/assistant/feedback/',
     QUICK_ACTIONS: '/assistant/quick-actions/',
     SUGGESTIONS: '/assistant/suggestions/',
+  },
+
+  // Finanzas
+  FINANCE: {
+    // Categorías de gastos
+    CATEGORIES: '/finance/categories/',
+    CATEGORY_DETAIL: (id: string) => `/finance/categories/${id}/`,
+    
+    // Gastos/Egresos
+    EXPENSES: '/finance/expenses/',
+    EXPENSE_DETAIL: (id: string) => `/finance/expenses/${id}/`,
+    MARK_EXPENSE_PAID: (id: string) => `/finance/expenses/${id}/mark_as_paid/`,
+    
+    // Transacciones
+    TRANSACTIONS: '/finance/transactions/',
+    TRANSACTION_DETAIL: (id: string) => `/finance/transactions/${id}/`,
+    
+    // Dashboard Financiero
+    DASHBOARD_SUMMARY: '/finance/dashboard/summary/',
+    CASH_FLOW: '/finance/dashboard/cash_flow/',
+    BALANCE: '/finance/dashboard/balance/',
   },
 
   // Machine Learning

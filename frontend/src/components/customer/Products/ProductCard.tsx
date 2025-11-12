@@ -1,6 +1,7 @@
-import React from 'react';
-import { ShoppingBag, Heart } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShoppingBag, Heart, Plus, Minus } from 'lucide-react';
 import { Product } from '../../../services/productService';
+import { useCart } from '../../../contexts/CartContext';
 
 interface ProductCardProps {
   product: Product;
@@ -13,6 +14,74 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onViewDetails,
   onQuickAdd 
 }) => {
+  const { items, addToCart, updateCartItem } = useCart();
+  const [quantity, setQuantity] = useState(0);
+  const [isAdding, setIsAdding] = useState(false);
+  const [cartItemId, setCartItemId] = useState<string | null>(null);
+
+  // Verificar si el producto está en el carrito y obtener cantidad
+  useEffect(() => {
+    if (product.variants && product.variants.length === 1) {
+      const variantId = product.variants[0].id;
+      const cartItem = items.find(item => item.product_variant.id === variantId);
+      setQuantity(cartItem?.quantity || 0);
+      setCartItemId(cartItem?.id || null);
+    }
+  }, [items, product]);
+
+  // Manejar agregar al carrito
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (product.variants && product.variants.length === 1) {
+      setIsAdding(true);
+      try {
+        const success = await addToCart(
+          product.variants[0].id, 
+          1, 
+          product.variants[0]
+        );
+        if (success) {
+          setQuantity(1);
+        }
+      } catch (error) {
+        console.error('Error al agregar al carrito:', error);
+      } finally {
+        setIsAdding(false);
+      }
+    }
+  };
+
+  // Manejar incremento de cantidad
+  const handleIncrement = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!cartItemId) return;
+    
+    const newQuantity = quantity + 1;
+    const maxStock = product.variants?.[0]?.available_stock || 0;
+    
+    if (newQuantity <= maxStock) {
+      const success = await updateCartItem(cartItemId, newQuantity);
+      if (success) {
+        setQuantity(newQuantity);
+      }
+    }
+  };
+
+  // Manejar decremento de cantidad
+  const handleDecrement = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!cartItemId || quantity <= 1) return;
+    
+    const newQuantity = quantity - 1;
+    const success = await updateCartItem(cartItemId, newQuantity);
+    if (success) {
+      setQuantity(newQuantity);
+    }
+  };
+
   // Obtener colores únicos de las variantes
   const availableColors = product.variants
     ? Array.from(new Set(product.variants.map(v => v.color.name)))
@@ -122,17 +191,48 @@ const ProductCard: React.FC<ProductCardProps> = ({
             )}
           </div>
           
-          {hasStock && (
+          {hasStock && product.variants?.length === 1 && (
+            quantity === 0 ? (
+              // Botón inicial "Agregar"
+              <button
+                onClick={handleAddToCart}
+                disabled={isAdding}
+                className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isAdding ? 'Agregando...' : 'Agregar'}
+              </button>
+            ) : (
+              // Control de cantidad
+              <div className="flex items-center gap-2 bg-black rounded-lg overflow-hidden">
+                <button
+                  onClick={handleDecrement}
+                  className="px-3 py-2 text-white hover:bg-gray-800 transition-colors"
+                >
+                  <Minus size={16} />
+                </button>
+                <span className="px-3 text-white font-semibold min-w-[2rem] text-center">
+                  {quantity}
+                </span>
+                <button
+                  onClick={handleIncrement}
+                  className="px-3 py-2 text-white hover:bg-gray-800 transition-colors"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+            )
+          )}
+
+          {hasStock && product.variants && product.variants.length > 1 && (
+            // Si tiene múltiples variantes, mostrar botón para ver detalles
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (product.variants?.length === 1 && onQuickAdd) {
-                  onQuickAdd(product);
-                }
+                onViewDetails(product);
               }}
               className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors"
             >
-              Agregar
+              Ver Opciones
             </button>
           )}
         </div>

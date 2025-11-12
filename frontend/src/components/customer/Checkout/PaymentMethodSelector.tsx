@@ -4,7 +4,7 @@ import { PaymentMethod, paymentService } from '../../../services/paymentService'
 
 interface PaymentMethodSelectorProps {
   selectedMethodId: string | null;
-  onSelectMethod: (methodId: string) => void;
+  onSelectMethod: (methodId: string, method: PaymentMethod) => void;
   className?: string;
 }
 
@@ -58,6 +58,14 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
     );
   }
 
+  // Filtrar solo los métodos permitidos
+  const allowedNames = [
+    'Pago QR',
+    'Efectivo',
+    'Tarjeta de Débito/Credito'
+  ];
+  const filteredMethods = methods.filter(method => allowedNames.includes(method.name));
+
   return (
     <div className={className}>
       <h3 className="text-lg font-semibold text-black mb-4 uppercase tracking-wider">
@@ -65,14 +73,15 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
       </h3>
       
       <div className="space-y-3">
-        {methods.map((method) => {
+        
+        {filteredMethods.map((method) => {
           const isSelected = selectedMethodId === method.id;
           const hasFee = parseFloat(method.processing_fee_percentage) > 0 || parseFloat(method.processing_fee_fixed) > 0;
           
           return (
             <button
               key={method.id}
-              onClick={() => onSelectMethod(method.id)}
+              onClick={() => onSelectMethod(method.id, method)}
               className={`
                 w-full p-4 rounded-lg border-2 text-left transition-all
                 ${isSelected 

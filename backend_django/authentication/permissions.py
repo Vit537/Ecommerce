@@ -15,6 +15,16 @@ class IsSuperuserOrAdmin(BasePermission):
         )
 
 
+class IsAdminOrManager(BasePermission):
+    """
+    Permiso para que solo admins o gerentes puedan acceder
+    """
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and (
+            request.user.is_superuser or request.user.role in ['admin', 'gerente']
+        )
+
+
 def require_permission(permission_codename):
     """
     Decorador para requerir un permiso específico

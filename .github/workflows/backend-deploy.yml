@@ -67,17 +67,7 @@ jobs:
             --region "${{ env.REGION }}" \
             --allow-unauthenticated \
             --add-cloudsql-instances "${{ env.CLOUD_SQL_CONNECTION }}" \
-            --set-env-vars "DEBUG=False" \
-            --set-env-vars "DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" \
-            --set-env-vars "DB_NAME=${{ secrets.DB_NAME }}" \
-            --set-env-vars "DB_USER=${{ secrets.DB_USER }}" \
-            --set-env-vars "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" \
-            --set-env-vars "DB_HOST=/cloudsql/${{ env.CLOUD_SQL_CONNECTION }}" \
-            --set-env-vars "DB_PORT=5432" \
-            --set-env-vars "ALLOWED_HOSTS=*" \
-            --set-env-vars "CSRF_TRUSTED_ORIGINS=https://ecommerce-backend-930184937279.us-central1.run.app" \
-            --set-env-vars "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" \
-            --set-env-vars "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" \
+            --set-env-vars "^|^DEBUG=False|DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}|DB_NAME=${{ secrets.DB_NAME }}|DB_USER=${{ secrets.DB_USER }}|DB_PASSWORD=${{ secrets.DB_PASSWORD }}|DB_HOST=/cloudsql/${{ env.CLOUD_SQL_CONNECTION }}|DB_PORT=5432|ALLOWED_HOSTS=*|CSRF_TRUSTED_ORIGINS=https://ecommerce-backend-930184937279.us-central1.run.app,https://ecommerce-frontend-930184937279.us-central1.run.app|CORS_ALLOWED_ORIGINS=https://ecommerce-frontend-930184937279.us-central1.run.app|GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}|OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}|USE_CLOUD_STORAGE=True|GS_BUCKET_NAME=${{ secrets.GS_BUCKET_NAME }}|GS_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}|STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}|STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}|STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
             --port 8080 \
             --memory 1Gi \
             --cpu 1 \

@@ -41,8 +41,9 @@ class CheckoutService {
   /**
    * Crear una orden desde el carrito actual
    */
-  async createOrder(checkoutData: CheckoutData): Promise<OrderResponse> {
-    return apiService.post<OrderResponse>(API_ENDPOINTS.ORDERS.CREATE, checkoutData);
+  // Permitir cualquier objeto para createOrder (body flexible)
+  async createOrder(orderData: any): Promise<OrderResponse> {
+    return apiService.post<OrderResponse>(API_ENDPOINTS.ORDERS.CREATE, orderData);
   }
 
   /**
@@ -102,6 +103,35 @@ class CheckoutService {
       shipping: shippingCost.toFixed(2),
       tax: taxAmount.toFixed(2),
       total: total.toFixed(2)
+    };
+  }
+
+  /**
+   * Mapear datos del frontend al formato esperado por el backend
+   */
+  mapCheckoutData(
+    checkoutData: CheckoutData,
+    cartItems: any[],
+    userId: string
+  ) {
+    return {
+      customer: userId,
+      shipping_method: checkoutData.shipping_method_id,
+      payment_method: checkoutData.payment_method_id,
+      items: cartItems.map(item => ({
+        product_variant: item.product_variant.id,
+        quantity: item.quantity,
+        unit_price: parseFloat(item.unit_price)
+      })),
+      subtotal: cartItems.reduce((acc, item) => acc + parseFloat(item.unit_price) * item.quantity, 0),
+      tax_amount: 0.0,
+      discount_amount: 0.0,
+      shipping_cost: 0.0,
+      total_amount: cartItems.reduce((acc, item) => acc + parseFloat(item.unit_price) * item.quantity, 0),
+      status: 'pending',
+      shipping_address: checkoutData.shipping_address,
+      billing_address: checkoutData.billing_address,
+      notes: checkoutData.notes || ''
     };
   }
 }
